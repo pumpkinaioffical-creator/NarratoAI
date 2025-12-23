@@ -1,0 +1,85 @@
+<script>
+ function trackRechargeClick() {
+     localStorage.setItem('payment_pending', 'true');
+     localStorage.setItem('payment_timestamp', Date.now().toString());
+ }
+
+ function openRechargeConfirmModal() {
+     const modal = document.getElementById('recharge-confirm-modal');
+     modal.classList.remove('hidden');
+     modal.classList.add('flex');
+ }
+
+ function cancelRechargeCheck() {
+     localStorage.removeItem('payment_pending');
+     localStorage.removeItem('payment_timestamp');
+     const modal = document.getElementById('recharge-confirm-modal');
+     modal.classList.add('hidden');
+     modal.classList.remove('flex');
+ }
+
+ function openCnyPaymentModal(name, price, qrUrl, instruction) {
+     document.getElementById('cny-modal-plan-name').textContent = name;
+     document.getElementById('cny-modal-price').textContent = '¥' + price;
+     document.getElementById('cny-modal-qr').src = qrUrl || '';
+     document.getElementById('cny-modal-instruction').textContent = instruction || "{{ _('请扫码支付，备注用户名') }}";
+
+     const modal = document.getElementById('cny-payment-modal');
+     modal.classList.remove('hidden');
+     modal.classList.add('flex');
+ }
+
+ async function checkRechargeStatus() {
+     const btn = document.getElementById('check-status-btn');
+     const originalText = btn.innerHTML;
+     btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ' + "{{ _('查询中...') }}";
+     btn.disabled = true;
+
+     try {
+         // Add a small delay to simulate processing
+         await new Promise(r => setTimeout(r, 1000));
+
+         const response = await fetch('{{ url_for("api.get_user_status") }}');
+         const data = await response.json();
+
+         if (data.success) {
+             if (data.is_pro) {
+                 alert("{{ _('充值成功！您的 Pro 会员已激活。') }}");
+                 localStorage.removeItem('payment_pending');
+                 window.location.reload();
+             } else {
+                 alert("{{ _('尚未收到充值成功的确认。可能有几分钟延迟，请稍后再试或检查您的邮箱。') }}");
+                 btn.innerHTML = originalText;
+                 btn.disabled = false;
+             }
+         } else {
+             alert("{{ _('查询失败: ') }}" + data.error);
+             btn.innerHTML = originalText;
+             btn.disabled = false;
+         }
+     } catch (e) {
+         alert("{{ _('网络错误，请稍后重试') }}");
+         btn.innerHTML = originalText;
+         btn.disabled = false;
+     }
+ }
+
+ document.addEventListener('DOMContentLoaded', function() {
+    // Check for payment pending
+    const paymentPending = localStorage.getItem('payment_pending');
+    const paymentTimestamp = localStorage.getItem('payment_timestamp');
+
+    if (paymentPending === 'true') {
+        const now = Date.now();
+        const pendingTime = parseInt(paymentTimestamp || '0');
+        // If pending for less than 1 hour (3600000 ms), show modal
+        if (now - pendingTime < 3600000) {
+            openRechargeConfirmModal();
+        } else {
+            // Expired, clear it
+            localStorage.removeItem('payment_pending');
+            localStorage.removeItem('payment_timestamp');
+        }
+    }
+ });
+</script>

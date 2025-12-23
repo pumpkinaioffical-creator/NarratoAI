@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+{% block title %}ModelScope 图像生成设置 - 南瓜AI 管理面板{% endblock %}
+{% block content %}
+<div class="admin-panel-container">
+    <div class="page-header">
+        <h2>ModelScope 图像生成设置</h2>
+        <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-secondary">返回面板</a>
+    </div>
+
+    <div class="settings-card">
+        <h3>基本配置</h3>
+        <form method="POST" action="{{ url_for('admin.modelscope_settings') }}">
+            <div class="form-group">
+                <label for="default_timeout_seconds">默认推理超时（秒）</label>
+                <input type="number" id="default_timeout_seconds" name="default_timeout_seconds" class="form-control"
+                    value="{{ settings.default_timeout_seconds }}" min="60" max="600" placeholder="300">
+                <small>推理超时时间（60-600秒）。超过此时间用户可重新发起请求。</small>
+            </div>
+            <button type="submit" class="btn btn-primary">保存配置</button>
+        </form>
+    </div>
+
+    <div class="settings-card">
+        <h3>API Token 池</h3>
+        <p>系统将轮询使用这些 Token 调用 ModelScope API。</p>
+
+        <form method="POST" action="{{ url_for('admin.modelscope_add_key') }}" class="add-key-form">
+            <div class="input-group">
+                <input type="text" name="new_key" class="form-control" placeholder="输入新的 ModelScope Token（格式：ms-xxxx）"
+                    required>
+                <button type="submit" class="btn btn-success">添加 Token</button>
+            </div>
+        </form>
+
+        <div class="key-list">
+            {% if settings['keys'] %}
+            {% for key in settings['keys'] %}
+            <div class="key-item">
+                <span class="key-value">{{ key[:8] }}...{{ key[-4:] }}</span>
+                <form method="POST" action="{{ url_for('admin.modelscope_delete_key') }}" style="display:inline;">
+                    <input type="hidden" name="key_to_delete" value="{{ key }}">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('确定要删除此 Token 吗？')">删除</button>
+                </form>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="no-keys">暂无 Token，请添加。</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="settings-card">
+        <h3>支持的模型</h3>
+        <p>以下模型已硬编码，可在创建 ModelScope Space 时选择。</p>
+        <div class="model-list">
+            <div class="model-item">
+                <strong>Tongyi-MAI/Z-Image-Turbo</strong>
+                <span class="model-desc">通义图像生成模型（默认）</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-panel-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .page-header h2 {
+        color: #FF7518;
+        margin: 0;
+    }
+
+    .settings-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .settings-card h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #2C2C2C;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        text-decoration: none;
+        color: white;
+    }
+
+    .btn-primary {
+        background: #FF7518;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+    }
+
+    .btn-success {
+        background: #28a745;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .add-key-form {
+        margin-bottom: 20px;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .key-list,
+    .model-list {
+        border: 1px solid #eee;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .key-item,
+    .model-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        background: #f9f9f9;
+    }
+
+    .key-item:last-child,
+    .model-item:last-child {
+        border-bottom: none;
+    }
+
+    .key-value {
+        font-family: monospace;
+        color: #555;
+    }
+
+    .model-desc {
+        color: #666;
+        font-size: 13px;
+    }
+
+    .no-keys {
+        padding: 20px;
+        text-align: center;
+        color: #999;
+        margin: 0;
+    }
+</style>
+{% endblock %}

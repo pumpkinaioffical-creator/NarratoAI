@@ -1,0 +1,476 @@
+{% extends "layout.html" %}
+{% block title %}Pro 会员系统 - 管理面板{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto pb-12" x-data="{ showAddForm: false }">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-4">
+            <a href="{{ url_for('admin.admin_panel') }}" class="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900">Pro 会员系统</h1>
+        </div>
+        <!-- Plus Button to Toggle Add Form -->
+        <button @click="showAddForm = !showAddForm"
+                class="flex items-center justify-center w-10 h-10 rounded-full bg-pumpkin-500 text-white shadow-lg hover:bg-pumpkin-600 transition-all transform active:scale-95"
+                title="新增套餐">
+            <svg class="w-6 h-6 transition-transform duration-300" :class="{ 'rotate-45': showAddForm }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        </button>
+    </div>
+
+    <!-- Global Settings Card -->
+    <div class="glass rounded-3xl overflow-hidden p-8 mb-8 shadow-sm">
+        <form method="post" class="space-y-6">
+            <!-- Enable/Disable Switch -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">全局开关 (Pro 会员系统)</h3>
+                    <p class="text-sm text-gray-500">关闭后，所有 Pro 会员功能和标识将对用户隐藏。</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="enabled" class="sr-only peer" {% if settings.enabled %}checked{% endif %}>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pumpkin-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pumpkin-500"></div>
+                </label>
+            </div>
+
+            <!-- Promotion Mode Switch -->
+            <div class="flex items-center justify-between pt-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">推广制 (Promotion Mode)</h3>
+                    <p class="text-sm text-gray-500">仅在 "Pro 会员系统" 关闭时可用。开启后，用户可以通过推广网站获得 Pro 身份。</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="promotion_enabled" class="sr-only peer" {% if settings.promotion_enabled %}checked{% endif %}>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                </label>
+            </div>
+
+            <!-- Promotion Benefits Editor -->
+            <div class="pt-4">
+                <label for="promotion_benefits_html" class="block text-sm font-medium text-gray-700 mb-2">推广会员权益 (HTML 支持)</label>
+                <textarea id="promotion_benefits_html" name="promotion_benefits_html" rows="4" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 font-mono text-sm">{{ settings.promotion_benefits_html }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">将在用户个人资料的推广卡片中显示。</p>
+            </div>
+
+            <div class="border-t border-gray-100"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Ko-fi Shop Link (Legacy/Global) -->
+                <div>
+                    <label for="kofi_shop_link" class="block text-sm font-medium text-gray-700 mb-1">全局 Ko-fi 商店/充值链接 (备用)</label>
+                    <input type="url" id="kofi_shop_link" name="kofi_shop_link" value="{{ settings.kofi_shop_link or '' }}" placeholder="https://ko-fi.com/..." class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                    <p class="text-xs text-gray-500 mt-1">如果某个套餐未设置专属链接，将跳转到此链接。</p>
+                </div>
+
+                <!-- Verification Token -->
+                <div>
+                    <label for="kofi_verification_token" class="block text-sm font-medium text-gray-700 mb-1">Verification Token</label>
+                    <input type="text" id="kofi_verification_token" name="kofi_verification_token" value="{{ settings.kofi_verification_token or '' }}" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                    <p class="text-xs text-gray-500 mt-1">在 Ko-fi 的 API/Webhook 设置中获取。</p>
+                </div>
+            </div>
+
+            <!-- Webhook URL Display -->
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex-1 w-full overflow-hidden">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Webhook URL</h4>
+                    <code class="text-sm text-gray-800 break-all select-all">{{ url_for('payment.kofi_webhook', _external=True) }}</code>
+                </div>
+                <button type="button" onclick="testWebhook()" id="test-webhook-btn" class="flex-shrink-0 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-sm">
+                    测试连接
+                </button>
+            </div>
+
+            <!-- Task Description (Info) -->
+            <div>
+                <label for="task_description" class="block text-sm font-medium text-gray-700 mb-2">默认会员权益说明 (Markdown / 中文)</label>
+                <textarea id="task_description" name="task_description" rows="3" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">{{ settings.task_description }}</textarea>
+            </div>
+
+            <div>
+                <label for="task_description_en" class="block text-sm font-medium text-gray-700 mb-2">默认会员权益说明 (English)</label>
+                <textarea id="task_description_en" name="task_description_en" rows="3" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">{{ settings.task_description_en }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">当未显示具体套餐卡片时显示的通用说明。</p>
+            </div>
+
+            <div class="border-t border-gray-100"></div>
+
+            <!-- Usage Limits -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 mb-4">每日使用限制</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Standard User Limits -->
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h4 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                            普通用户 (Standard)
+                        </h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">聊天模型调用次数</label>
+                                <input type="number" name="standard_daily_chat_limit" value="{{ settings.usage_limits.standard.daily_chat_limit }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">WebSocket 推理次数</label>
+                                <input type="number" name="standard_daily_websocket_limit" value="{{ settings.usage_limits.standard.daily_websocket_limit }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pro User Limits -->
+                    <div class="bg-pumpkin-50 p-4 rounded-xl border border-pumpkin-200">
+                        <h4 class="font-bold text-pumpkin-800 mb-3 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-pumpkin-500"></span>
+                            Pro 会员
+                        </h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-pumpkin-700/70 uppercase mb-1">聊天模型调用次数</label>
+                                <input type="number" name="pro_daily_chat_limit" value="{{ settings.usage_limits.pro.daily_chat_limit }}" class="w-full rounded-lg border-pumpkin-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-pumpkin-700/70 uppercase mb-1">WebSocket 推理次数</label>
+                                <input type="number" name="pro_daily_websocket_limit" value="{{ settings.usage_limits.pro.daily_websocket_limit }}" class="w-full rounded-lg border-pumpkin-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors shadow-lg shadow-gray-900/20">
+                    保存设置
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Add New Plan Form (Hidden by default) -->
+    <div x-show="showAddForm"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform -translate-y-4"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         class="glass rounded-3xl overflow-hidden p-8 mb-8 border-2 border-pumpkin-100 shadow-lg relative">
+        <div class="absolute top-0 right-0 p-4">
+            <button @click="showAddForm = false" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <span class="w-8 h-8 rounded-full bg-pumpkin-100 text-pumpkin-600 flex items-center justify-center text-sm font-bold">+</span>
+            新增套餐
+        </h2>
+        <form method="post" action="{{ url_for('admin.add_pro_plan') }}" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">套餐名称</label>
+                <input type="text" name="name" required placeholder="例如：月度 Pro 会员" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">时长 (天)</label>
+                <input type="number" name="duration_days" value="30" min="1" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">排序权重</label>
+                <input type="number" name="sort_order" value="0" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+            </div>
+
+            <!-- Currency/Price/Link Section - USD -->
+            <div class="md:col-span-2 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <h3 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                    <span class="bg-blue-200 text-blue-700 px-2 py-0.5 rounded text-xs">英文/国际版 (USD)</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">价格 (USD)</label>
+                        <input type="text" name="price" placeholder="5.00" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">原价 (USD) - 可选</label>
+                        <input type="text" name="original_price" placeholder="10.00" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Ko-fi 支付链接</label>
+                        <input type="url" name="link" placeholder="https://ko-fi.com/s/..." class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Currency/Price/Link Section - CNY -->
+            <div class="md:col-span-2 bg-red-50 p-4 rounded-xl border border-red-100">
+                <h3 class="text-sm font-bold text-red-800 mb-3 flex items-center gap-2">
+                    <span class="bg-red-200 text-red-700 px-2 py-0.5 rounded text-xs">中文版 (CNY)</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">价格 (人民币)</label>
+                        <input type="text" name="price_cny" placeholder="35.00" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">原价 (人民币) - 可选</label>
+                        <input type="text" name="original_price_cny" placeholder="50.00" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">支付宝收款码</label>
+                        <input type="file" name="alipay_qr_code_file" accept="image/*" class="w-full rounded-lg border-gray-300 shadow-sm text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                        <input type="hidden" name="alipay_qr_code" value=""> <!-- Fallback/Compatibility -->
+                        <p class="text-xs text-gray-500 mt-1">直接上传图片，将自动保存到服务器。</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">中文支付说明</label>
+                        <textarea name="cny_payment_instruction" rows="2" placeholder="请扫码支付，备注用户名，联系管理员开通。" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Webhook 匹配项名 (可选)</label>
+                <input type="text" name="kofi_item_name" placeholder="与 Ko-fi 商品名称完全一致" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                <p class="text-xs text-gray-500 mt-1">用于自动入账匹配。如果 Ko-fi 发送的 item_name 包含此文本，则认为购买了此套餐。</p>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">套餐描述 (默认/中文)</label>
+                <textarea name="description" rows="3" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500"></textarea>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">套餐描述 (English)</label>
+                <textarea name="description_en" rows="3" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-pumpkin-500 focus:ring-pumpkin-500"></textarea>
+            </div>
+
+            <div class="md:col-span-2 flex items-center justify-between pt-2">
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <input type="checkbox" name="enabled" checked class="rounded border-gray-300 text-pumpkin-600 focus:ring-pumpkin-500">
+                    立即启用
+                </label>
+                <button type="submit" class="px-6 py-2 bg-pumpkin-500 text-white font-bold rounded-xl hover:bg-pumpkin-600 transition-colors shadow-md">
+                    创建套餐
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Promotion Submissions Review Queue -->
+    {% if settings.promotion_enabled and submissions %}
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 px-1 flex items-center gap-2">
+            <span>推广审核队列</span>
+            <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{{ submissions | selectattr('status', 'equalto', 'pending') | list | length }} 待审核</span>
+        </h2>
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">推广链接</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">截图</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for sub in submissions %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ sub.username }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                                <a href="{{ sub.link }}" target="_blank" class="hover:underline truncate max-w-xs block">{{ sub.link }}</a>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <a href="{{ sub.image_url }}" target="_blank" class="text-pumpkin-600 hover:underline">查看截图</a>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ sub.timestamp[:16].replace('T', ' ') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if sub.status == 'pending' %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">待审核</span>
+                                {% elif sub.status == 'approved' %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">已通过</span>
+                                {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">已拒绝</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                {% if sub.status == 'pending' %}
+                                <div class="flex justify-end gap-2">
+                                    <form action="{{ url_for('admin.approve_promotion_submission', submission_id=sub.id) }}" method="post" class="inline">
+                                        <button type="submit" class="text-green-600 hover:text-green-900">通过</button>
+                                    </form>
+                                    <form action="{{ url_for('admin.reject_promotion_submission', submission_id=sub.id) }}" method="post" class="inline">
+                                        <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('确定拒绝？')">拒绝</button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <span class="text-gray-400">已处理</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Plans List -->
+    <div>
+        <h2 class="text-xl font-bold text-gray-900 mb-4 px-1">套餐列表</h2>
+        {% if plans and plans|length > 0 %}
+        <div class="grid grid-cols-1 gap-6">
+            {% for plan in plans %}
+            <div x-data="{ expanded: false }" class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+                <!-- Header / Summary -->
+                <div class="p-5 flex items-center justify-between cursor-pointer bg-gray-50/50" @click="expanded = !expanded">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm" style="background: linear-gradient(135deg, #FF7518, #FFB366);">
+                            {{ loop.index }}
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-900 text-lg">{{ plan.name }}</div>
+                            <div class="text-xs text-gray-500 font-mono">
+                                <span class="text-blue-600 font-bold">${{ plan.price }}</span> /
+                                <span class="text-red-600 font-bold">¥{{ plan.price_cny or '--' }}</span>
+                                · {{ plan.duration_days }}天
+                                {% if not plan.enabled %}
+                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">已禁用</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="text-sm font-medium text-gray-500 hover:text-pumpkin-600 transition-colors">
+                            <span x-text="expanded ? '收起' : '编辑'"></span>
+                        </button>
+                        <form method="post" action="{{ url_for('admin.delete_pro_plan', plan_id=plan.id) }}" onsubmit="return confirm('确定要删除该套餐吗？此操作无法撤销。')">
+                            <button type="submit" @click.stop class="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Edit Form (Expanded) -->
+                <div x-show="expanded" x-collapse class="border-t border-gray-100 p-6 bg-white">
+                    <form method="post" action="{{ url_for('admin.update_pro_plan', plan_id=plan.id) }}" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">名称</label>
+                            <input type="text" name="name" value="{{ plan.name }}" required class="w-full text-sm rounded-lg border-gray-200 focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">时长(天)</label>
+                                <input type="number" name="duration_days" value="{{ plan.duration_days }}" min="1" class="w-full text-sm rounded-lg border-gray-200 focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">排序</label>
+                                <input type="number" name="sort_order" value="{{ plan.sort_order }}" class="w-full text-sm rounded-lg border-gray-200 focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                            </div>
+                        </div>
+
+                        <!-- USD Edit -->
+                        <div class="md:col-span-2 bg-blue-50 p-3 rounded-lg border border-blue-100 grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-blue-700 uppercase mb-1">价格 (USD)</label>
+                                <input type="text" name="price" value="{{ plan.price }}" class="w-full text-sm rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-blue-700 uppercase mb-1">原价 (USD)</label>
+                                <input type="text" name="original_price" value="{{ plan.original_price }}" class="w-full text-sm rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-blue-700 uppercase mb-1">Ko-fi 链接</label>
+                                <input type="url" name="link" value="{{ plan.link }}" placeholder="https://ko-fi.com/s/..." class="w-full text-sm rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <!-- CNY Edit -->
+                        <div class="md:col-span-2 bg-red-50 p-3 rounded-lg border border-red-100 grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-red-700 uppercase mb-1">价格 (CNY)</label>
+                                <input type="text" name="price_cny" value="{{ plan.price_cny }}" class="w-full text-sm rounded-lg border-gray-200 focus:border-red-500 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-red-700 uppercase mb-1">原价 (CNY)</label>
+                                <input type="text" name="original_price_cny" value="{{ plan.original_price_cny }}" class="w-full text-sm rounded-lg border-gray-200 focus:border-red-500 focus:ring-red-500">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-red-700 uppercase mb-1">支付宝收款码</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="file" name="alipay_qr_code_file" accept="image/*" class="w-full text-sm rounded-lg border-gray-200 bg-white file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                                    {% if plan.alipay_qr_code %}
+                                    <a href="{{ plan.alipay_qr_code }}" target="_blank" class="text-xs text-red-600 hover:underline flex-shrink-0" title="查看当前二维码">查看</a>
+                                    {% endif %}
+                                </div>
+                                <input type="text" name="alipay_qr_code" value="{{ plan.alipay_qr_code }}" class="hidden"> <!-- Keep old value if not changed -->
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-red-700 uppercase mb-1">中文支付说明</label>
+                                <textarea name="cny_payment_instruction" rows="2" class="w-full text-sm rounded-lg border-gray-200 focus:border-red-500 focus:ring-red-500">{{ plan.cny_payment_instruction }}</textarea>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Webhook 匹配项名</label>
+                            <input type="text" name="kofi_item_name" value="{{ plan.kofi_item_name }}" class="w-full text-sm rounded-lg border-gray-200 focus:border-pumpkin-500 focus:ring-pumpkin-500">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">描述 (默认/中文)</label>
+                            <textarea name="description" rows="2" class="w-full text-sm rounded-lg border-gray-200 focus:border-pumpkin-500 focus:ring-pumpkin-500">{{ plan.description }}</textarea>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">描述 (English)</label>
+                            <textarea name="description_en" rows="2" class="w-full text-sm rounded-lg border-gray-200 focus:border-pumpkin-500 focus:ring-pumpkin-500">{{ plan.description_en }}</textarea>
+                        </div>
+
+                        <div class="md:col-span-2 flex items-center justify-between pt-2">
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" name="enabled" {% if plan.enabled %}checked{% endif %} class="rounded border-gray-300 text-pumpkin-600 focus:ring-pumpkin-500">
+                                启用
+                            </label>
+                            <button type="submit" class="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">
+                                保存更改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-300">
+            <p class="text-gray-500">暂无套餐，点击右上角的 "+" 按钮添加第一个套餐。</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function testWebhook() {
+    const btn = document.getElementById('test-webhook-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '测试中...';
+
+    try {
+        const response = await fetch('{{ url_for("admin.test_kofi_webhook") }}', {
+            method: 'POST'
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (e) {
+        alert('测试请求发送失败');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+</script>
+{% endblock %}

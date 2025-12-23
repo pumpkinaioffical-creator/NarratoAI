@@ -1,0 +1,56 @@
+{% macro render_pro_plans(plans, pro_settings, is_cn_locale, user) %}
+{% if plans %}
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    {% for plan in plans %}
+        {% if plan.enabled %}
+        <div class="p-4 rounded-2xl border border-gray-200 bg-white hover:border-pumpkin-400 hover:shadow-md transition-all relative overflow-hidden group text-left">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="font-bold text-lg text-gray-900">{{ plan.name }}</div>
+                    {% if not is_cn_locale and plan.description_en %}
+                        <div class="text-sm text-gray-500 mt-1">{{ plan.description_en }}</div>
+                    {% else %}
+                        <div class="text-sm text-gray-500 mt-1">{{ plan.description }}</div>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    {% if not is_cn_locale %}
+                        {% if plan.original_price %}
+                            <div class="text-sm text-gray-400 line-through decoration-gray-400 decoration-1 mb-0.5">${{ plan.original_price }}</div>
+                        {% endif %}
+                        <div class="text-xl font-bold text-pumpkin-600">${{ plan.price }}</div>
+                    {% else %}
+                        {% if plan.original_price_cny %}
+                            <div class="text-sm text-gray-400 line-through decoration-gray-400 decoration-1 mb-0.5">¥{{ plan.original_price_cny }}</div>
+                        {% endif %}
+                        <div class="text-xl font-bold text-pumpkin-600">¥{{ plan.price_cny or '--' }}</div>
+                    {% endif %}
+                    <div class="text-xs text-gray-400 mt-0.5">{{ plan.duration_days }} {{ _('天') }}</div>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end">
+                {% if user %}
+                    {% if not is_cn_locale %}
+                        <a href="{{ plan.link or pro_settings.kofi_shop_link }}" target="_blank" onclick="trackRechargeClick()" class="inline-flex items-center gap-1.5 px-6 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-pumpkin-500 transition-colors shadow-sm">
+                            <span>{{ _('购买') }}</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </a>
+                    {% else %}
+                        <button onclick="openCnyPaymentModal('{{ plan.name }}', '{{ plan.price_cny }}', '{{ plan.alipay_qr_code }}', `{{ plan.cny_payment_instruction }}`)" class="inline-flex items-center gap-1.5 px-6 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-pumpkin-500 transition-colors shadow-sm">
+                            <span>{{ _('购买') }}</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <button onclick="alert('{{ _('请前往个人资料页面登录后购买。') }}')" class="inline-flex items-center gap-1.5 px-6 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-pumpkin-500 transition-colors shadow-sm">
+                        <span>{{ _('购买') }}</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}

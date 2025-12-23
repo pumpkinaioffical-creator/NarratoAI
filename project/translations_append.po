@@ -1,0 +1,567 @@
+
+msgid "API 使用示例"
+msgstr "API Examples"
+
+msgid "进入聊天室"
+msgstr "Enter Chat"
+
+msgid "生成结果"
+msgstr "Results"
+
+msgid "输出文件："
+msgstr "Output File:"
+
+msgid "若视频没有立即播放，可稍后在"
+msgstr "If video doesn't play immediately, check in"
+
+msgid "我的作品"
+msgstr "My Results"
+
+msgid "中查看。"
+msgstr "."
+
+msgid "任务执行中，完成后最新结果会自动出现在此处，或前往"
+msgstr "Task running, results will appear here or go to"
+
+msgid "查看"
+msgstr "to view"
+
+msgid "上一次任务已超时"
+msgstr "Last task timed out"
+
+msgid "请检查 GPU 服务后重新开始。"
+msgstr "Please check GPU service and retry."
+
+msgid "等待任务开始..."
+msgstr "Waiting for task..."
+
+msgid "执行日志"
+msgstr "Execution Logs"
+
+msgid "该卡片通过浏览器直接调用外部 GPU 服务，暂不提供远程日志。运行状态会在右侧实时更新。"
+msgstr "This card calls external GPU directly from browser, remote logs not available. Status updates on the right."
+
+msgid "等待日志..."
+msgstr "Waiting for logs..."
+
+msgid "状态信息"
+msgstr "Status Info"
+
+msgid "当前状态:"
+msgstr "Current Status:"
+
+msgid "处理中"
+msgstr "Processing"
+
+msgid "就绪"
+msgstr "Ready"
+
+msgid "API密钥:"
+msgstr "API Key:"
+
+msgid "文件库"
+msgstr "File Browser"
+
+msgid "正在加载文件..."
+msgstr "Loading files..."
+
+msgid "文件库中没有文件。"
+msgstr "No files in library."
+
+msgid "预览"
+msgstr "Preview"
+
+msgid "文件名"
+msgstr "Filename"
+
+msgid "大小"
+msgstr "Size"
+
+msgid "修改日期"
+msgstr "Date Modified"
+
+msgid "操作"
+msgstr "Action"
+
+msgid "选择"
+msgstr "Select"
+
+msgid "开始生成"
+msgstr "Start Generation"
+
+msgid "正在生成..."
+msgstr "Generating..."
+
+msgid "您需要登录才能运行此工具。请点击页面右上角的按钮进行登录或注册。"
+msgstr "You need to login to run this tool."
+
+msgid "请先选择一个GPU。"
+msgstr "Please select a GPU."
+
+msgid "准备提交任务..."
+msgstr "Preparing to submit..."
+
+msgid "正在启动..."
+msgstr "Starting..."
+
+msgid "正在启动任务..."
+msgstr "Starting task..."
+
+msgid "任务已启动，正在执行..."
+msgstr "Task started, executing..."
+
+msgid "错误: "
+msgstr "Error: "
+
+msgid "未知错误"
+msgstr "Unknown error"
+
+msgid "请求失败: "
+msgstr "Request failed: "
+
+msgid "暂无日志..."
+msgstr "No logs..."
+
+msgid "✅ 任务完成!"
+msgstr "✅ Task Completed!"
+
+msgid "❌ 任务失败"
+msgstr "❌ Task Failed"
+
+msgid "结果文件:"
+msgstr "Result File:"
+
+msgid "下载结果文件"
+msgstr "Download Result"
+
+msgid "无法获取结果文件的预览链接: "
+msgstr "Cannot get preview link: "
+
+msgid "获取预览链接时出错: "
+msgstr "Error getting preview link: "
+
+msgid "任务完成，但没有找到输出文件或文件上传失败。"
+msgstr "Task completed but output missing or upload failed."
+
+msgid "请查看日志了解详细信息。"
+msgstr "Check logs for details."
+
+msgid "⚡ 正在执行..."
+msgstr "⚡ Executing..."
+
+msgid "请耐心等待任务完成。"
+msgstr "Please wait patiently."
+
+msgid "❌ 连接错误"
+msgstr "❌ Connection Error"
+
+msgid "无法获取任务状态，请检查网络或稍后重试。"
+msgstr "Cannot get task status, check network."
+
+msgid "已选择: "
+msgstr "Selected: "
+
+msgid "已复制!"
+msgstr "Copied!"
+
+msgid "复制失败，请手动复制。"
+msgstr "Copy failed, please copy manually."
+
+msgid "创意描述"
+msgstr "Creative Description"
+
+msgid "描述您想要创建的内容..."
+msgstr "Describe what you want to create..."
+
+msgid "参数设置"
+msgstr "Parameters"
+
+msgid "上传文件"
+msgstr "Upload File"
+
+msgid "从文件库选择"
+msgstr "Select from Drive"
+
+msgid "处理中..."
+msgstr "Processing..."
+
+msgid "示例 #"
+msgstr "Example #"
+
+msgid "使用此提示词"
+msgstr "Use this prompt"
+
+msgid "点击图片查看原图"
+msgstr "Click to view original"
+
+msgid "该卡片需要登录后才能使用，请先"
+msgstr "Login required to use this card, please"
+
+msgid "或"
+msgstr "or"
+
+msgid "你还没有被分配可用的 GPU。请联系管理员在用户管理中为你添加请求地址与密钥。"
+msgstr "You have not been assigned a GPU yet. Please contact admin."
+
+msgid "请选择一个GPU"
+msgstr "Select a GPU"
+
+msgid "-- 请选择一个GPU --"
+msgstr "-- Select a GPU --"
+
+msgid "暂无可用GPU，请联系管理员"
+msgstr "No GPU available, contact admin"
+
+msgid "管理员可以为你分配多个请求地址与密钥，此处以 GPU 名称展示。"
+msgstr "Admins can assign multiple GPUs, shown here by name."
+
+msgid "视频输入"
+msgstr "Video Input"
+
+msgid "音频输入"
+msgstr "Audio Input"
+
+msgid "从网盘选择"
+msgstr "Select from Drive"
+
+msgid "使用外部链接"
+msgstr "Use External Link"
+
+msgid "选择一个视频文件 (.mp4)"
+msgstr "Select a video file (.mp4)"
+
+msgid "未选择文件"
+msgstr "No file selected"
+
+msgid "选择音频文件 (.wav / .mp3)"
+msgstr "Select an audio file (.wav / .mp3)"
+
+msgid "开始处理"
+msgstr "Start Processing"
+
+msgid "部分高级GPU已被锁定。"
+msgstr "Some advanced GPUs are locked."
+
+msgid "绑定邀请码"
+msgstr "Bind Invitation Code"
+
+msgid "来解锁所有功能。"
+msgstr "to unlock all features."
+
+msgid "示例 #"
+msgstr "Example #"
+
+msgid "使用此提示词"
+msgstr "Use this prompt"
+
+msgid "点击图片查看原图"
+msgstr "Click to view original"
+
+msgid "该卡片需要登录后才能使用，请先"
+msgstr "Login required to use this card, please"
+
+msgid "或"
+msgstr "or"
+
+msgid "你还没有被分配可用的 GPU。请联系管理员在用户管理中为你添加请求地址与密钥。"
+msgstr "You have not been assigned a GPU yet. Please contact admin."
+
+msgid "请选择一个GPU"
+msgstr "Select a GPU"
+
+msgid "-- 请选择一个GPU --"
+msgstr "-- Select a GPU --"
+
+msgid "暂无可用GPU，请联系管理员"
+msgstr "No GPU available, contact admin"
+
+msgid "管理员可以为你分配多个请求地址与密钥，此处以 GPU 名称展示。"
+msgstr "Admins can assign multiple GPUs, shown here by name."
+
+msgid "视频输入"
+msgstr "Video Input"
+
+msgid "音频输入"
+msgstr "Audio Input"
+
+msgid "从网盘选择"
+msgstr "Select from Drive"
+
+msgid "使用外部链接"
+msgstr "Use External Link"
+
+msgid "选择一个视频文件 (.mp4)"
+msgstr "Select a video file (.mp4)"
+
+msgid "未选择文件"
+msgstr "No file selected"
+
+msgid "选择音频文件 (.wav / .mp3)"
+msgstr "Select an audio file (.wav / .mp3)"
+
+msgid "开始处理"
+msgstr "Start Processing"
+
+msgid "创意描述"
+msgstr "Creative Description"
+
+msgid "描述您想要创建的内容..."
+msgstr "Describe what you want to create..."
+
+msgid "参数设置"
+msgstr "Parameters"
+
+msgid "上传文件"
+msgstr "Upload File"
+
+msgid "开始生成"
+msgstr "Start Generation"
+
+msgid "处理中..."
+msgstr "Processing..."
+
+msgid "API 使用示例"
+msgstr "API Examples"
+
+msgid "进入聊天室"
+msgstr "Enter Chat"
+
+msgid "生成结果"
+msgstr "Results"
+
+msgid "输出文件："
+msgstr "Output File:"
+
+msgid "若视频没有立即播放，可稍后在"
+msgstr "If video doesn't play immediately, check in"
+
+msgid "我的作品"
+msgstr "My Results"
+
+msgid "中查看。"
+msgstr "."
+
+msgid "任务执行中，完成后最新结果会自动出现在此处，或前往"
+msgstr "Task running, results will appear here or go to"
+
+msgid "查看"
+msgstr "to view"
+
+msgid "上一次任务已超时"
+msgstr "Last task timed out"
+
+msgid "请检查 GPU 服务后重新开始。"
+msgstr "Please check GPU service and retry."
+
+msgid "等待任务开始..."
+msgstr "Waiting for task..."
+
+msgid "执行日志"
+msgstr "Execution Logs"
+
+msgid "该卡片通过浏览器直接调用外部 GPU 服务，暂不提供远程日志。运行状态会在右侧实时更新。"
+msgstr "This card calls external GPU directly from browser, remote logs not available. Status updates on the right."
+
+msgid "等待日志..."
+msgstr "Waiting for logs..."
+
+msgid "状态信息"
+msgstr "Status Info"
+
+msgid "当前状态:"
+msgstr "Current Status:"
+
+msgid "处理中"
+msgstr "Processing"
+
+msgid "就绪"
+msgstr "Ready"
+
+msgid "文件库"
+msgstr "File Browser"
+
+msgid "正在加载文件..."
+msgstr "Loading files..."
+
+msgid "文件库中没有文件。"
+msgstr "No files in library."
+
+msgid "预览"
+msgstr "Preview"
+
+msgid "文件名"
+msgstr "Filename"
+
+msgid "大小"
+msgstr "Size"
+
+msgid "修改日期"
+msgstr "Date Modified"
+
+msgid "操作"
+msgstr "Action"
+
+msgid "选择"
+msgstr "Select"
+
+msgid "请先登录后再选择文件。"
+msgstr "Please login first."
+
+msgid "请求已超时，请稍后重试。"
+msgstr "Request timed out, please retry later."
+
+msgid "超时：未在设定时间内收到推理结果。"
+msgstr "Timeout: No result received within limit."
+
+msgid "任务执行中，请稍候..."
+msgstr "Task running, please wait..."
+
+msgid "请选择文件来源"
+msgstr "Please select file source"
+
+msgid "请选择一个视频文件"
+msgstr "Please select a video file"
+
+msgid "请选择一个音频文件"
+msgstr "Please select an audio file"
+
+msgid "S3 配置缺失，无法生成文件链接"
+msgstr "S3 config missing, cannot generate link"
+
+msgid "请输入视频链接"
+msgstr "Please enter video link"
+
+msgid "请输入音频链接"
+msgstr "Please enter audio link"
+
+msgid "AWS SDK 未加载，无法生成上传链接"
+msgstr "AWS SDK not loaded"
+
+msgid "请登录后再使用该功能"
+msgstr "Please login to use this feature"
+
+msgid "请联系管理员分配 GPU 后再尝试"
+msgstr "Please contact admin to assign GPU"
+
+msgid "请选择一个 GPU"
+msgstr "Please select a GPU"
+
+msgid "1. 正在准备上传凭证..."
+msgstr "1. Preparing upload credentials..."
+
+msgid "2. 正在调用 GPU 服务..."
+msgstr "2. Calling GPU service..."
+
+msgid "GPU 服务调用失败"
+msgstr "GPU service call failed"
+
+msgid "3. 模型执行完成，正在拉取结果..."
+msgstr "3. Model execution finished, fetching result..."
+
+msgid "处理完成！如果视频稍后才出现，请刷新或前往“我的作品”查看。"
+msgstr "Done! If video appears later, refresh or check 'My Results'."
+
+msgid "执行失败，请重试"
+msgstr "Execution failed, please retry"
+
+msgid "执行失败，请检查输入后重试。"
+msgstr "Execution failed, check input and retry."
+
+msgid "上一次任务已超时，可重新尝试。"
+msgstr "Last task timed out, retry available."
+
+msgid "已加载最近结果"
+msgstr "Loaded recent result"
+
+msgid "-- 此Space无可用GPU --"
+msgstr "-- No GPU available for this Space --"
+
+msgid "无可用GPU"
+msgstr "No GPU"
+
+msgid "(🔒 需要邀请码)"
+msgstr "(🔒 Invitation Code Required)"
+
+msgid "选择高级GPU需要登录。您可以点击页面右上角的按钮进行登录或注册。"
+msgstr "Login required for advanced GPU."
+
+msgid "上传文件 (支持 LoRA, 最多2个)"
+msgstr "Upload File (LoRA supported, max 2)"
+
+msgid "上传文件 (必须)"
+msgstr "Upload File (Required)"
+
+msgid "您需要登录才能运行此工具。请点击页面右上角的按钮进行登录或注册。"
+msgstr "You need to login to run this tool."
+
+msgid "正在启动..."
+msgstr "Starting..."
+
+msgid "准备提交任务..."
+msgstr "Preparing to submit..."
+
+msgid "正在启动任务..."
+msgstr "Starting task..."
+
+msgid "任务已启动，正在执行..."
+msgstr "Task started, executing..."
+
+msgid "正在生成..."
+msgstr "Generating..."
+
+msgid "错误: "
+msgstr "Error: "
+
+msgid "未知错误"
+msgstr "Unknown error"
+
+msgid "请求失败: "
+msgstr "Request failed: "
+
+msgid "暂无日志..."
+msgstr "No logs..."
+
+msgid "✅ 任务完成!"
+msgstr "✅ Task Completed!"
+
+msgid "❌ 任务失败"
+msgstr "❌ Task Failed"
+
+msgid "结果文件:"
+msgstr "Result File:"
+
+msgid "下载结果文件"
+msgstr "Download Result"
+
+msgid "无法获取结果文件的预览链接: "
+msgstr "Cannot get preview link: "
+
+msgid "获取预览链接时出错: "
+msgstr "Error getting preview link: "
+
+msgid "任务完成，但没有找到输出文件或文件上传失败。"
+msgstr "Task completed but output missing or upload failed."
+
+msgid "请查看日志了解详细信息。"
+msgstr "Check logs for details."
+
+msgid "⚡ 正在执行..."
+msgstr "⚡ Executing..."
+
+msgid "请耐心等待任务完成。"
+msgstr "Please wait patiently."
+
+msgid "❌ 连接错误"
+msgstr "❌ Connection Error"
+
+msgid "无法获取任务状态，请检查网络或稍后重试。"
+msgstr "Cannot get task status, check network."
+
+msgid "已选择: "
+msgstr "Selected: "
+
+msgid "已复制!"
+msgstr "Copied!"
+
+msgid "复制失败，请手动复制。"
+msgstr "Copy failed, please copy manually."

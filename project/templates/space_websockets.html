@@ -1,0 +1,522 @@
+{% extends "layout.html" %}
+{% block title %}{{ ai_project.name }} - WebSocket 推理{% endblock %}
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    {% if announcement.enabled and announcement.show_on_projects %}
+    <div style="margin-bottom: 20px; padding: 15px; background-color: 
+        {% if announcement.type == 'warning' %}#fff3cd
+        {% elif announcement.type == 'error' %}#f8d7da
+        {% elif announcement.type == 'success' %}#d4edda
+        {% else %}#d1ecf1{% endif %};
+        border: 1px solid 
+        {% if announcement.type == 'warning' %}#ffeaa7
+        {% elif announcement.type == 'error' %}#f5c6cb
+        {% elif announcement.type == 'success' %}#c3e6cb
+        {% else %}#bee5eb{% endif %};
+        border-radius: 4px; color: #333;">
+        <strong>📢 {{ announcement.title }}</strong><br>
+        {{ announcement.content }}
+    </div>
+    {% endif %}
+
+    <div
+        style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h1 style="margin-top: 0; color: #333;">{{ ai_project.name }}</h1>
+        <p style="color: #666; font-size: 1.1em;">{{ ai_project.description }}</p>
+
+        {% set enabled_demos = (ai_project.demos | selectattr('enabled') | list) if ai_project.demos else [] %}
+        {% set demos_sorted = (enabled_demos | sort(attribute='sort_order')) if enabled_demos else [] %}
+        {% if demos_sorted and demos_sorted|length > 0 %}
+        <div
+            style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+            <h3 style="margin-top: 0; color: #333;">Demo / Examples</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                {% for demo in demos_sorted %}
+                <div style="background: white; border: 1px solid #eee; border-radius: 8px; padding: 12px;">
+                    <div style="font-weight: bold; margin-bottom: 8px;">{{ demo.title or ('示例 #' ~ loop.index) }}</div>
+                    {% if demo.type == 'prompt' %}
+                    <div
+                        style="color: #666; font-size: 13px; white-space: pre-wrap; max-height: 120px; overflow: auto; border: 1px solid #f0f0f0; padding: 8px; border-radius: 8px; background: #fafafa;">
+                        {{ demo.prompt }}</div>
+                    <button type="button"
+                        style="margin-top: 10px; padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                        onclick="applyWsDemoPrompt({{ demo.prompt | tojson }});">使用此提示词</button>
+                    {% elif demo.type == 'image' %}
+                    <a href="{{ demo.url }}" target="_blank" style="display:block;">
+                        <img src="{{ demo.url }}" alt="demo"
+                            style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #f0f0f0;">
+                    </a>
+                    {% elif demo.type == 'audio' %}
+                    <audio controls src="{{ demo.url }}" style="width: 100%;"></audio>
+                    <button type="button"
+                        style="margin-top: 10px; padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                        onclick="applyWsDemoAudio({{ demo.url | tojson }});">填充音频直链</button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if session.is_admin %}
+        <div
+            style="background: #f0f8ff; padding: 15px; border-radius: 6px; border-left: 4px solid #0066cc; margin: 20px 0;">
+            <strong style="color: #0066cc;">📡 连接状态</strong><br>
+            {% if is_connected %}
+            <span style="color: green; font-weight: bold;">✓ 已连接</span>
+            {% if queue_list %}
+            <p style="margin: 10px 0 0 0; color: #666;">当前队列 ({{ queue_size }}人):</p>
+            <ul style="margin: 5px 0 0 10px; padding-left: 15px; color: #444;">
+                {% for item in queue_list %}
+                <li>第{{ item.position }}位: <strong>{{ item.username }}</strong></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p style="margin: 10px 0 0 0; color: #666;">队列空闲，无等待请求</p>
+            {% endif %}
+            {% else %}
+            <span style="color: orange; font-weight: bold;">⏳ 等待连接</span>
+            <p style="margin: 10px 0 0 0; color: #666;">远程服务未连接</p>
+            {% endif %}
+        </div>
+        {% elif not is_connected %}
+        <div
+            style="background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107; margin: 20px 0;">
+            <strong style="color: #856404;">⏳ 服务暂时不可用</strong>
+            <p style="margin: 10px 0 0 0; color: #666;">请稍后再试。</p>
+        </div>
+        {% endif %}
+
+        {% if is_connected and current_username %}
+        <div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd;">
+            <h3 style="margin-top: 0; color: #333;">发送推理请求</h3>
+
+            <form id="inference-form" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" id="rate-limit-seconds"
+                    value="{{ ai_project.websockets_config.rate_limit_seconds if ai_project.websockets_config and ai_project.websockets_config.rate_limit_seconds else 0 }}">
+                {% if ai_project.websockets_config and ai_project.websockets_config.enable_prompt %}
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">提示词</label>
+                    <textarea name="prompt" id="prompt-input" rows="4" placeholder="输入你的提示词..."
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: Arial, sans-serif;"></textarea>
+                </div>
+                {% endif %}
+
+                {% if ai_project.websockets_config and ai_project.websockets_config.enable_audio %}
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">音频直链</label>
+                    <input type="url" name="audio_url" id="audio-input" placeholder="https://example.com/audio.wav"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; margin-bottom: 8px;">
+                    <button type="button" id="pick-file-btn"
+                        style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        📁 从网盘选择文件
+                    </button>
+                    <small style="color: #666; display: block; margin-top: 5px;">输入音频文件的直链地址，或点击按钮从网盘选择</small>
+                </div>
+                {% endif %}
+
+                {% if ai_project.websockets_config and ai_project.websockets_config.enable_video %}
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">视频文件</label>
+                    <input type="file" name="video_file" id="video-input" accept="video/*"
+                        style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666;">支持格式: MP4, WebM, MOV 等</small>
+                </div>
+                {% endif %}
+
+                {% if ai_project.websockets_config and ai_project.websockets_config.enable_file_upload %}
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">其他文件</label>
+                    <input type="file" name="other_file" id="file-input"
+                        style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                {% endif %}
+
+                <button type="submit" id="submit-btn"
+                    data-github-bound="{{ 'true' if is_github_user else 'false' }}"
+                    style="background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold;">
+                    发送请求
+                </button>
+            </form>
+
+            <div id="request-status"
+                style="margin-top: 20px; display: none; padding: 15px; background: #e3f2fd; border-radius: 4px; border-left: 4px solid #1976d2;">
+                <strong style="color: #1976d2;">处理中...</strong>
+                <p style="margin: 10px 0 0 0; color: #555;" id="status-message">正在发送请求到远程应用...</p>
+                <div id="progress-bar"
+                    style="margin-top: 10px; height: 4px; background: #ccc; border-radius: 2px; overflow: hidden;">
+                    <div style="height: 100%; background: #1976d2; width: 30%; animation: progress 2s infinite;"></div>
+                </div>
+            </div>
+
+            <div id="request-result"
+                style="margin-top: 20px; display: none; padding: 15px; background: #f1f8e9; border-radius: 4px; border-left: 4px solid #689f38;">
+                <strong style="color: #689f38;">✓ 请求完成</strong>
+                <pre id="result-content"
+                    style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto; margin-top: 10px; max-height: 300px;"></pre>
+            </div>
+
+            <div id="request-error"
+                style="margin-top: 20px; display: none; padding: 15px; background: #ffebee; border-radius: 4px; border-left: 4px solid #d32f2f;">
+                <strong style="color: #d32f2f;">✗ 错误</strong>
+                <p id="error-message" style="margin: 10px 0 0 0; color: #555;"></p>
+            </div>
+        </div>
+        {% elif is_connected and not current_username %}
+        <div
+            style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeaa7; text-align: center;">
+            <p style="margin: 0;">请<a href="{{ url_for('auth.login') }}"
+                    style="color: #0066cc; text-decoration: none;"><strong>登录</strong></a>以发送推理请求</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    @keyframes progress {
+        0% {
+            width: 0%;
+        }
+
+        50% {
+            width: 100%;
+        }
+
+        100% {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        window.applyWsDemoPrompt = function (text) {
+            const el = document.getElementById('prompt-input');
+            if (!el) {
+                alert('请先登录以使用此功能');
+                return;
+            }
+            el.value = text || '';
+            el.focus();
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        window.applyWsDemoAudio = function (url) {
+            const el = document.getElementById('audio-input');
+            if (!el) {
+                if (url) window.open(url, '_blank');
+                else alert('请先登录以使用此功能');
+                return;
+            }
+            el.value = url || '';
+            el.focus();
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const form = document.getElementById('inference-form');
+        if (!form) return;
+
+        // 文件选择器按钮
+        const pickFileBtn = document.getElementById('pick-file-btn');
+        if (pickFileBtn) {
+            pickFileBtn.addEventListener('click', function () {
+                openFilePicker();
+            });
+        }
+
+        // 打开文件选择器弹窗
+        function openFilePicker() {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.className = 'file-picker-modal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 800px; max-height: 80vh; overflow-y: auto; width: 90%;';
+            modalContent.innerHTML = `
+                <h3 style="margin-top: 0;">选择文件</h3>
+                <div style="display:flex; gap: 10px; align-items:center; margin: 10px 0 15px 0; flex-wrap: wrap;">
+                    <input id="file-search-input" type="text" placeholder="搜索文件名..." style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    <button id="file-search-btn" type="button" style="padding: 10px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">搜索</button>
+                    <button id="file-search-clear-btn" type="button" style="padding: 10px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">清除</button>
+                </div>
+                <div style="display:flex; gap: 10px; align-items:center; margin: 0 0 15px 0; flex-wrap: wrap;">
+                    <input id="file-upload-input" type="file" style="flex: 1; min-width: 240px;">
+                    <button id="file-upload-btn" type="button" style="padding: 10px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">上传到网盘</button>
+                    <span id="file-upload-status" style="color:#666;"></span>
+                </div>
+                <div id="file-list" style="margin: 20px 0;">加载中...</div>
+                <button id="close-modal" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">关闭</button>
+            `;
+
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // 关闭按钮
+            document.getElementById('close-modal').addEventListener('click', function () {
+                document.body.removeChild(modal);
+            });
+
+            const searchInput = document.getElementById('file-search-input');
+            const searchBtn = document.getElementById('file-search-btn');
+            const searchClearBtn = document.getElementById('file-search-clear-btn');
+            const uploadInput = document.getElementById('file-upload-input');
+            const uploadBtn = document.getElementById('file-upload-btn');
+            const uploadStatus = document.getElementById('file-upload-status');
+
+            function loadFileList(query) {
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = '加载中...';
+                const q = (query || '').trim();
+                const url = q ? `/api/my_s3_files?q=${encodeURIComponent(q)}` : '/api/my_s3_files';
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.files && data.files.length > 0) {
+                            fileList.innerHTML = data.files.map(file => `
+                                <div style="padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 4px; cursor: pointer;" 
+                                     onclick="selectFile('${file.url}', this.closest('.file-picker-modal'))"
+                                     onmouseover="this.style.background='#f8f9fa'" 
+                                     onmouseout="this.style.background='white'">
+                                    <strong>${file.filename}</strong><br>
+                                    <small style="color: #666;">${(file.size / 1024).toFixed(2)} KB</small>
+                                </div>
+                            `).join('');
+                        } else {
+                            fileList.innerHTML = '<p style="color: #666;">暂无文件</p>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('加载文件失败:', err);
+                        fileList.innerHTML = '<p style="color: red;">加载失败: ' + err.message + '</p>';
+                    });
+            }
+
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function () {
+                    loadFileList(searchInput ? searchInput.value : '');
+                });
+            }
+            if (searchClearBtn) {
+                searchClearBtn.addEventListener('click', function () {
+                    if (searchInput) searchInput.value = '';
+                    loadFileList('');
+                });
+            }
+            if (searchInput) {
+                searchInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        loadFileList(searchInput.value);
+                    }
+                });
+            }
+
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', async function () {
+                    if (!uploadInput || !uploadInput.files || uploadInput.files.length === 0) {
+                        alert('请选择要上传的文件');
+                        return;
+                    }
+
+                    uploadBtn.disabled = true;
+                    if (uploadStatus) uploadStatus.textContent = '上传中...';
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', uploadInput.files[0]);
+                        formData.append('folder', 'pan');
+
+                        const resp = await fetch('/api/my_s3_upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        if (!resp.ok || !data.success) {
+                            throw new Error(data.error || '上传失败');
+                        }
+
+                        if (uploadStatus) uploadStatus.textContent = '上传成功';
+                        if (data.url) {
+                            document.getElementById('audio-input').value = data.url;
+                            document.body.removeChild(modal);
+                            return;
+                        }
+
+                        loadFileList(searchInput ? searchInput.value : '');
+                    } catch (err) {
+                        if (uploadStatus) uploadStatus.textContent = '上传失败';
+                        alert('上传失败: ' + err.message);
+                    } finally {
+                        uploadBtn.disabled = false;
+                    }
+                });
+            }
+
+            // 加载文件列表
+            loadFileList('');
+        }
+
+        // 选择文件
+        window.selectFile = function (url, modal) {
+            document.getElementById('audio-input').value = url;
+            document.body.removeChild(modal);
+        };
+
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Check if GitHub is bound
+            const submitButton = document.getElementById('submit-btn');
+            if (submitButton && submitButton.dataset.githubBound !== 'true') {
+                if (confirm('请先去个人资料绑定git hub才能免费使用。是否现在去绑定？')) {
+                    window.location.href = '{{ url_for("auth.github_bind") }}';
+                }
+                return;
+            }
+
+            // 验证音频URL
+            const audioInput = document.getElementById('audio-input');
+            if (audioInput && !audioInput.value.trim()) {
+                alert('请输入音频直链');
+                return;
+            }
+
+            const formData = new FormData(form);
+            const statusDiv = document.getElementById('request-status');
+            const resultDiv = document.getElementById('request-result');
+            const errorDiv = document.getElementById('request-error');
+            const statusMsg = document.getElementById('status-message');
+            const submitBtn = document.getElementById('submit-btn');
+            const rateLimitInput = document.getElementById('rate-limit-seconds');
+            const rateLimit = parseInt(rateLimitInput ? rateLimitInput.value : 0) || 0;
+
+            if (submitBtn.disabled) return;
+
+            statusDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            statusMsg.textContent = '正在发送请求到远程应用...';
+            submitBtn.disabled = true;
+            submitBtn.style.background = '#ccc';
+            submitBtn.textContent = '请求发送中...';
+
+            try {
+                const response = await fetch('/websockets/submit/{{ ai_project.id }}', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 429 && data.retry_after) {
+                        startCooldown(data.retry_after);
+                    } else {
+                        submitBtn.disabled = false;
+                        submitBtn.style.background = '#007bff';
+                        submitBtn.textContent = '发送请求';
+                    }
+                    throw new Error(data.error || '请求失败');
+                }
+
+                if (rateLimit > 0) {
+                    startCooldown(rateLimit);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.style.background = '#007bff';
+                    submitBtn.textContent = '发送请求';
+                }
+
+                const requestId = data.request_id;
+                statusMsg.textContent = `请求已提交 (ID: ${requestId})，正在等待远程应用处理...`;
+
+                // Poll for result
+                let attempts = 0;
+                const maxAttempts = 120; // 2 minutes with 1 second interval
+
+                const pollResult = setInterval(async () => {
+                    attempts++;
+                    try {
+                        const statusResponse = await fetch(`/websockets/status?request_id=${requestId}`);
+                        const statusData = await statusResponse.json();
+
+                        if (statusData.status === 'completed') {
+                            clearInterval(pollResult);
+                            statusDiv.style.display = 'none';
+                            resultDiv.style.display = 'block';
+
+                            // 显示结果
+                            const result = statusData.result;
+                            const resultContent = document.getElementById('result-content');
+
+                            if (result.audio_url) {
+                                // 音频结果 - 显示播放器
+                                resultContent.innerHTML = `
+                                    <audio controls src="${result.audio_url}" style="width: 100%; margin-bottom: 10px;"></audio>
+                                    <p><strong>耗时:</strong> ${result.duration?.toFixed(2) || '-'}秒</p>
+                                    <a href="${result.audio_url}" download style="color: #007bff;">下载音频</a>
+                                `;
+                            } else if (result.image_url) {
+                                // 图片结果 - 显示图片
+                                resultContent.innerHTML = `
+                                    <img src="${result.image_url}" style="max-width: 100%; border-radius: 8px; margin-bottom: 10px;">
+                                    <p><strong>耗时:</strong> ${result.duration?.toFixed(2) || '-'}秒</p>
+                                    <a href="${result.image_url}" download style="color: #007bff;">下载图片</a>
+                                `;
+                            } else {
+                                // 其他结果 - 显示 JSON
+                                resultContent.textContent = JSON.stringify(result, null, 2);
+                            }
+                        } else if (statusData.status === 'failed') {
+                            clearInterval(pollResult);
+                            statusDiv.style.display = 'none';
+                            errorDiv.style.display = 'block';
+                            document.getElementById('error-message').textContent = statusData.result?.error || '请求处理失败';
+                        } else if (attempts >= maxAttempts) {
+                            clearInterval(pollResult);
+                            statusDiv.style.display = 'none';
+                            errorDiv.style.display = 'block';
+                            document.getElementById('error-message').textContent = '请求超时（2分钟）';
+                        }
+                    } catch (err) {
+                        if (attempts >= maxAttempts) {
+                            clearInterval(pollResult);
+                            statusDiv.style.display = 'none';
+                            errorDiv.style.display = 'block';
+                            document.getElementById('error-message').textContent = '无法检查请求状态';
+                        }
+                    }
+                }, 1000);
+
+            } catch (error) {
+                statusDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        });
+
+        function startCooldown(seconds) {
+            const submitBtn = document.getElementById('submit-btn');
+            let remaining = seconds;
+            submitBtn.disabled = true;
+            submitBtn.style.background = '#ccc';
+            submitBtn.textContent = `请等待 ${remaining} 秒...`;
+
+            const timer = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    submitBtn.disabled = false;
+                    submitBtn.style.background = '#007bff';
+                    submitBtn.textContent = '发送请求';
+                } else {
+                    submitBtn.textContent = `请等待 ${remaining} 秒...`;
+                }
+            }, 1000);
+        }
+    });
+</script>
+{% endblock %}

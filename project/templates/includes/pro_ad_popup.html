@@ -1,0 +1,140 @@
+{% from 'includes/pro_plans_cards.html' import render_pro_plans %}
+
+<!-- Only show popup if Pro System is enabled OR Promotion Mode is active -->
+{% if pro_settings and (pro_settings.enabled or pro_settings.promotion_enabled) and (not current_user or not current_user.is_pro) %}
+<div id="pro-ad-popup" class="fixed inset-0 z-[110] hidden items-center justify-center p-4 sm:p-6" style="background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-fade-in-up relative flex flex-col">
+        
+        {% if pro_settings.enabled %}
+        <!-- STANDARD PAID PRO POPUP -->
+        <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span class="bg-gradient-to-r from-pumpkin-500 to-red-500 text-transparent bg-clip-text">{{ _('升级到 Pro') }}</span>
+                <span class="px-2 py-0.5 rounded-full bg-pumpkin-100 text-pumpkin-600 text-xs font-bold uppercase tracking-wider">{{ _('限时优惠') }}</span>
+            </h3>
+            <button onclick="closeProAdPopup()" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="p-6">
+            <div class="mb-6 text-center">
+                <h4 class="text-2xl font-bold text-gray-900 mb-2">{{ _('解锁无限可能') }}</h4>
+                <p class="text-gray-500">
+                    {% if get_locale() == 'en' %}
+                        {{ pro_settings.task_description_en | default(pro_settings.task_description, true) | default('Unlimited inference, dedicated GPU, and more premium features.', true) | markdown | striptags }}
+                    {% else %}
+                        {{ pro_settings.task_description | default('无限次推理，专用 GPU，更多高级功能。', true) | markdown | striptags }}
+                    {% endif %}
+                </p>
+            </div>
+            {{ render_pro_plans(pro_plans, pro_settings, get_locale() != 'en', current_user) }}
+        </div>
+
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 text-center">
+            <button onclick="closeProAdPopup()" class="text-sm text-gray-500 hover:text-gray-900 font-medium underline decoration-gray-300 hover:decoration-gray-900 underline-offset-4">
+                {{ _('不，我稍后再升级') }}
+            </button>
+        </div>
+
+        {% elif pro_settings.promotion_enabled %}
+        <!-- PROMOTION MODE POPUP -->
+        <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-gray-900">{{ _('免费额度已用完') }}</span>
+            </h3>
+            <button onclick="closeProAdPopup()" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="p-8 flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-6">
+                ⏳
+            </div>
+            <h4 class="text-2xl font-bold text-gray-900 mb-3">{{ _('今日额度已耗尽') }}</h4>
+            <div class="text-gray-500 mb-8 max-w-md">
+                <p class="mb-2">{{ _('您在当前空间的免费使用次数已耗尽。') }}</p>
+                <p class="font-medium text-pumpkin-600 mb-4">{{ _('免费额度将在次日 00:00 自动恢复。') }}</p>
+                <p class="text-sm text-gray-400">{{ _('不想等待？参与推广活动，免费获取 Pro 会员，解锁无限畅聊！') }}</p>
+            </div>
+            
+            <a href="{{ url_for('main.profile') }}" class="w-full max-w-sm py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mb-4">
+                {{ _('去完成推广任务') }}
+            </a>
+            
+            <button onclick="closeProAdPopup()" class="text-sm text-gray-400 hover:text-gray-600 font-medium">
+                {{ _('这就去睡觉') }}
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function showProAdPopup(force = false) {
+        const popup = document.getElementById('pro-ad-popup');
+        if (!popup) return;
+
+        if (force) {
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+            updateProAdTimestamps();
+            return;
+        }
+
+        const now = Date.now();
+        const today = new Date().toISOString().split('T')[0];
+
+        const lastDate = localStorage.getItem('pro_ad_last_date');
+        const lastTime = parseInt(localStorage.getItem('pro_ad_last_time') || '0');
+
+        let shouldShow = false;
+
+        // 1. First visit daily
+        if (lastDate !== today) {
+            shouldShow = true;
+        }
+        // 2. Every 1 hour (3600000 ms)
+        else if (now - lastTime > 3600000) {
+            shouldShow = true;
+        }
+
+        if (shouldShow) {
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+            updateProAdTimestamps();
+        }
+    }
+
+    function closeProAdPopup() {
+        const popup = document.getElementById('pro-ad-popup');
+        if (popup) {
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
+        }
+    }
+
+    function updateProAdTimestamps() {
+        const now = Date.now();
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('pro_ad_last_date', today);
+        localStorage.setItem('pro_ad_last_time', now.toString());
+    }
+
+    // Initialize on page load (auto-trigger logic)
+    document.addEventListener('DOMContentLoaded', function() {
+        const force = {{ 'true' if force_pro_popup else 'false' }};
+
+        if (force) {
+            // Show immediately if forced (e.g. Space view)
+            showProAdPopup(true);
+        } else {
+            // Delay slightly for auto-trigger (Homepage/Daily)
+            setTimeout(() => {
+                showProAdPopup(false);
+            }, 1500);
+        }
+    });
+</script>
+{% endif %}

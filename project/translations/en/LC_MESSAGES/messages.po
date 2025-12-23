@@ -1,0 +1,1269 @@
+# English translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-11-23 06:30+0000\n"
+"PO-Revision-Date: 2025-11-23 06:30+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: project/templates/layout.html:4 project/templates/login.html:2
+#: project/templates/login.html:16
+msgid "南瓜AI"
+msgstr "Pumpkin AI"
+
+#: project/templates/layout.html:10
+msgid "南瓜AI是一个充满创意的AI项目社区，探索最新、最有趣的AI应用和工具。"
+msgstr "Pumpkin AI is a creative community for AI projects, exploring the latest and most interesting AI applications and tools."
+
+#: project/templates/layout.html:128 project/templates/index.html:7
+msgid "探索"
+msgstr "Explore"
+
+#: project/templates/layout.html:129
+msgid "文章"
+msgstr "Articles"
+
+#: project/templates/layout.html:144
+msgid "网盘"
+msgstr "Drive"
+
+#: project/templates/layout.html:150 project/templates/cloud_terminal.html:2
+msgid "云终端"
+msgstr "Cloud Terminal"
+
+#: project/templates/layout.html:157 project/templates/layout.html:234
+msgid "切换语言"
+msgstr "Switch Language"
+
+#: project/templates/layout.html:183 project/templates/layout.html:260
+msgid "聊天室"
+msgstr "Chat"
+
+#: project/templates/layout.html:189 project/templates/layout.html:266
+msgid "管理面板"
+msgstr "Admin Panel"
+
+#: project/templates/layout.html:216 project/templates/layout.html:266
+msgid "个人资料"
+msgstr "Profile"
+
+#: project/templates/layout.html:218 project/templates/layout.html:268
+msgid "设置"
+msgstr "Settings"
+
+#: project/templates/layout.html:221 project/templates/layout.html:271
+msgid "退出登录"
+msgstr "Logout"
+
+#: project/templates/layout.html:225 project/templates/layout.html:275
+#: project/templates/login.html:2 project/templates/login.html:48
+msgid "登录"
+msgstr "Login"
+
+#: project/templates/layout.html:226 project/templates/layout.html:276
+#: project/templates/login.html:57
+msgid "注册"
+msgstr "Register"
+
+#: project/templates/cloud_terminal.html:8
+msgid "云终端控制台"
+msgstr "Cloud Terminal Console"
+
+#: project/templates/cloud_terminal.html:9
+msgid "管理和执行远程 GPU 环境命令"
+msgstr "Manage and execute remote GPU environment commands"
+
+#: project/templates/cloud_terminal.html:24
+#: project/templates/cloud_terminal.html:78
+msgid "执行命令"
+msgstr "Run Command"
+
+#: project/templates/cloud_terminal.html:31
+msgid "目标环境"
+msgstr "Target Environment"
+
+#: project/templates/cloud_terminal.html:33
+msgid "刷新列表"
+msgstr "Refresh List"
+
+#: project/templates/cloud_terminal.html:55
+msgid "你的云GPU机器正在启动中，请稍后再来。"
+msgstr "Your GPU instance is starting, please check back later."
+
+#: project/templates/cloud_terminal.html:57
+msgid "有问题可联系站长"
+msgstr "For issues, contact admin"
+
+#: project/templates/cloud_terminal.html:57
+msgid "点击跳转到聊天群聊"
+msgstr "Click to join chat"
+
+#: project/templates/cloud_terminal.html:66
+msgid "Shell 命令"
+msgstr "Shell Command"
+
+#: project/templates/cloud_terminal.html:69
+msgid "CMD + ENTER to run"
+msgstr "CMD + ENTER to run"
+
+#: project/templates/cloud_terminal.html:83
+msgid "登录后执行"
+msgstr "Login to Execute"
+
+#: project/templates/cloud_terminal.html:87
+msgid "清空"
+msgstr "Clear"
+
+#: project/templates/cloud_terminal.html:101
+msgid "等待输入..."
+msgstr "Waiting for input..."
+
+#: project/templates/cloud_terminal.html:117
+msgid "本次运行详情"
+msgstr "Execution Details"
+
+#: project/templates/cloud_terminal.html:124
+msgid "耗时"
+msgstr "Duration"
+
+#: project/templates/cloud_terminal.html:128
+msgid "网络延迟"
+msgstr "Latency"
+
+#: project/templates/cloud_terminal.html:138
+msgid "执行历史"
+msgstr "History"
+
+#: project/templates/cloud_terminal.html:143
+msgid "暂无历史记录"
+msgstr "No history available"
+
+#: project/templates/index.html:4
+msgid "浏览所有南瓜AI上的AI项目。发现、分享和运行各种富有创造力的AI应用，从图像生成到智能对话，开启你的AI探索之旅。"
+msgstr "Browse all AI projects on Pumpkin AI. Discover, share, and run creative AI applications, from image generation to intelligent chat."
+
+#: project/templates/index.html:30
+msgid "管理员消息"
+msgstr "Admin Message"
+
+#: project/templates/index.html:68
+msgid "AI 工具"
+msgstr "AI Tools"
+
+#: project/templates/index.html:98
+msgid "立即运行"
+msgstr "Run Now"
+
+#: project/templates/index.html:141
+msgid "探索AI的无限可能..."
+msgstr "Explore infinite possibilities..."
+
+#: project/templates/index.html:144
+msgid "AI 项目"
+msgstr "AI Project"
+
+#: project/templates/index.html:145
+msgid "分钟前"
+msgstr "mins ago"
+
+#: project/templates/index.html:155
+msgid "暂无项目"
+msgstr "No Projects"
+
+#: project/templates/index.html:156
+msgid "稍后再来看看吧"
+msgstr "Check back later"
+
+#: project/templates/login.html:17
+msgid "欢迎回来，请登录您的账户"
+msgstr "Welcome back, please login to your account"
+
+#: project/templates/login.html:28 project/templates/login.html:33
+msgid "用户名"
+msgstr "Username"
+
+#: project/templates/login.html:37 project/templates/login.html:42
+msgid "密码"
+msgstr "Password"
+
+#: project/templates/login.html:55
+msgid "还没有账户？"
+msgstr "Don't have an account?"
+
+#: project/templates/login.html:57
+msgid "立即注册"
+msgstr "Register Now"
+
+msgid "设置与个人资料"
+msgstr "Settings & Profile"
+
+msgid "请提供准确的个人信息。您的隐私对我们很重要，敏感信息将受到严格保护。"
+msgstr "Please provide accurate personal information. Your privacy is important to us."
+
+msgid "Pro 会员"
+msgstr "Pro Membership"
+
+msgid "有效期至"
+msgstr "Valid until"
+
+msgid "尊贵的 Pro 会员"
+msgstr "Premium Pro Member"
+
+msgid "您已解锁所有 Pro 会员权益。"
+msgstr "You have unlocked all Pro benefits."
+
+msgid "会员续费"
+msgstr "Renew Membership"
+
+msgid "暂无续费套餐"
+msgstr "No renewal plans available"
+
+msgid "升级到 Pro"
+msgstr "Upgrade to Pro"
+
+msgid "暂无可用套餐"
+msgstr "No plans available"
+
+msgid "基本信息"
+msgstr "Basic Info"
+
+msgid "头像"
+msgstr "Avatar"
+
+msgid "点击更换头像"
+msgstr "Click to change"
+
+msgid "修改"
+msgstr "Edit"
+
+msgid "绑定邮箱"
+msgstr "Bind Email"
+
+msgid "已绑定"
+msgstr "Bound"
+
+msgid "未绑定"
+msgstr "Unbound"
+
+msgid "输入邮箱地址"
+msgstr "Enter email address"
+
+msgid "绑定"
+msgstr "Bind"
+
+msgid "每个账号只能绑定唯一的邮箱，绑定后可用于接收通知和充值验证。"
+msgstr "Each account can only bind one unique email, which is used for notifications and payment verification."
+
+msgid "API 密钥"
+msgstr "API Key"
+
+msgid "复制"
+msgstr "Copy"
+
+msgid "每日签到"
+msgstr "Daily Check-in"
+
+msgid "立即签到"
+msgstr "Check-in Now"
+
+msgid "今日已签到"
+msgstr "Checked in today"
+
+msgid "安全设置"
+msgstr "Security Settings"
+
+msgid "当前密码"
+msgstr "Current Password"
+
+msgid "新密码"
+msgstr "New Password"
+
+msgid "确认新密码"
+msgstr "Confirm New Password"
+
+msgid "更新密码"
+msgstr "Update Password"
+
+msgid "充值确认"
+msgstr "Payment Confirmation"
+
+msgid "您是否已经完成了付款？点击“是”我们将为您自动查询订单状态。"
+msgstr "Have you completed the payment? Click 'Yes' to check order status."
+
+msgid "取消"
+msgstr "Cancel"
+
+msgid "是，已支付"
+msgstr "Yes, Paid"
+
+msgid "修改用户名"
+msgstr "Change Username"
+
+msgid "用户名每 30 天只能修改一次。修改后需要使用新用户名登录。"
+msgstr "Username can only be changed once every 30 days. You will need to login with the new username."
+
+msgid "新用户名"
+msgstr "New Username"
+
+msgid "3-20个字符，仅限字母数字下划线"
+msgstr "3-20 characters, alphanumeric and underscore only"
+
+msgid "确认修改"
+msgstr "Confirm"
+
+msgid "选择头像"
+msgstr "Select Avatar"
+
+msgid "限时优惠"
+msgstr "Limited Time Offer"
+
+msgid "解锁无限可能"
+msgstr "Unlock Unlimited Possibilities"
+
+msgid "不，我稍后再升级"
+msgstr "No thanks, I'll upgrade later"
+
+msgid "天"
+msgstr "Days"
+
+msgid "购买"
+msgstr "Purchase"
+
+msgid "VIP 套餐"
+msgstr "VIP Plan"
+
+msgid "支付宝收款码"
+msgstr "Alipay QR Code"
+
+msgid "支付说明："
+msgstr "Instructions:"
+
+msgid "我已支付"
+msgstr "I have paid"
+
+msgid "请扫码支付，备注用户名"
+msgstr "Please scan to pay, include username in remark"
+
+msgid "充值成功！您的 Pro 会员已激活。"
+msgstr "Recharge successful! Your Pro membership is active."
+
+msgid "尚未收到充值成功的确认。可能有几分钟延迟，请稍后再试或检查您的邮箱。"
+msgstr "Payment confirmation not received yet. There might be a delay, please try again later."
+
+msgid "查询失败: "
+msgstr "Query failed: "
+
+msgid "网络错误，请稍后重试"
+msgstr "Network error, please try again later"
+
+msgid "查询中..."
+msgstr "Checking..."
+
+msgid "部分高级GPU已被锁定。"
+msgstr "Some advanced GPUs are locked."
+
+msgid "绑定邀请码"
+msgstr "Bind Invitation Code"
+
+msgid "来解锁所有功能。"
+msgstr "to unlock all features."
+
+msgid "示例 #"
+msgstr "Example #"
+
+msgid "使用此提示词"
+msgstr "Use this prompt"
+
+msgid "点击图片查看原图"
+msgstr "Click to view original"
+
+msgid "该卡片需要登录后才能使用，请先"
+msgstr "Login required to use this card, please"
+
+msgid "或"
+msgstr "or"
+
+msgid "你还没有被分配可用的 GPU。请联系管理员在用户管理中为你添加请求地址与密钥。"
+msgstr "You have not been assigned a GPU yet. Please contact admin."
+
+msgid "请选择一个GPU"
+msgstr "Select a GPU"
+
+msgid "-- 请选择一个GPU --"
+msgstr "-- Select a GPU --"
+
+msgid "暂无可用GPU，请联系管理员"
+msgstr "No GPU available, contact admin"
+
+msgid "管理员可以为你分配多个请求地址与密钥，此处以 GPU 名称展示。"
+msgstr "Admins can assign multiple GPUs, shown here by name."
+
+msgid "视频输入"
+msgstr "Video Input"
+
+msgid "音频输入"
+msgstr "Audio Input"
+
+msgid "从网盘选择"
+msgstr "Select from Drive"
+
+msgid "使用外部链接"
+msgstr "Use External Link"
+
+msgid "选择一个视频文件 (.mp4)"
+msgstr "Select a video file (.mp4)"
+
+msgid "未选择文件"
+msgstr "No file selected"
+
+msgid "选择音频文件 (.wav / .mp3)"
+msgstr "Select an audio file (.wav / .mp3)"
+
+msgid "开始处理"
+msgstr "Start Processing"
+
+msgid "创意描述"
+msgstr "Creative Description"
+
+msgid "描述您想要创建的内容..."
+msgstr "Describe what you want to create..."
+
+msgid "参数设置"
+msgstr "Parameters"
+
+msgid "上传文件"
+msgstr "Upload File"
+
+msgid "开始生成"
+msgstr "Start Generation"
+
+msgid "处理中..."
+msgstr "Processing..."
+
+msgid "API 使用示例"
+msgstr "API Examples"
+
+msgid "进入聊天室"
+msgstr "Enter Chat"
+
+msgid "生成结果"
+msgstr "Results"
+
+msgid "输出文件："
+msgstr "Output File:"
+
+msgid "若视频没有立即播放，可稍后在"
+msgstr "If video doesn't play immediately, check in"
+
+msgid "我的作品"
+msgstr "My Results"
+
+msgid "中查看。"
+msgstr "."
+
+msgid "任务执行中，完成后最新结果会自动出现在此处，或前往"
+msgstr "Task running, results will appear here or go to"
+
+msgid "查看"
+msgstr "to view"
+
+msgid "上一次任务已超时"
+msgstr "Last task timed out"
+
+msgid "请检查 GPU 服务后重新开始。"
+msgstr "Please check GPU service and retry."
+
+msgid "等待任务开始..."
+msgstr "Waiting for task..."
+
+msgid "执行日志"
+msgstr "Execution Logs"
+
+msgid "该卡片通过浏览器直接调用外部 GPU 服务，暂不提供远程日志。运行状态会在右侧实时更新。"
+msgstr "This card calls external GPU directly from browser, remote logs not available. Status updates on the right."
+
+msgid "等待日志..."
+msgstr "Waiting for logs..."
+
+msgid "状态信息"
+msgstr "Status Info"
+
+msgid "当前状态:"
+msgstr "Current Status:"
+
+msgid "处理中"
+msgstr "Processing"
+
+msgid "就绪"
+msgstr "Ready"
+
+msgid "文件库"
+msgstr "File Browser"
+
+msgid "正在加载文件..."
+msgstr "Loading files..."
+
+msgid "文件库中没有文件。"
+msgstr "No files in library."
+
+msgid "预览"
+msgstr "Preview"
+
+msgid "文件名"
+msgstr "Filename"
+
+msgid "大小"
+msgstr "Size"
+
+msgid "修改日期"
+msgstr "Date Modified"
+
+msgid "操作"
+msgstr "Action"
+
+msgid "选择"
+msgstr "Select"
+
+msgid "请先登录后再选择文件。"
+msgstr "Please login first."
+
+msgid "请求已超时，请稍后重试。"
+msgstr "Request timed out, please retry later."
+
+msgid "超时：未在设定时间内收到推理结果。"
+msgstr "Timeout: No result received within limit."
+
+msgid "任务执行中，请稍候..."
+msgstr "Task running, please wait..."
+
+msgid "请选择文件来源"
+msgstr "Please select file source"
+
+msgid "请选择一个视频文件"
+msgstr "Please select a video file"
+
+msgid "请选择一个音频文件"
+msgstr "Please select an audio file"
+
+msgid "S3 配置缺失，无法生成文件链接"
+msgstr "S3 config missing, cannot generate link"
+
+msgid "请输入视频链接"
+msgstr "Please enter video link"
+
+msgid "请输入音频链接"
+msgstr "Please enter audio link"
+
+msgid "AWS SDK 未加载，无法生成上传链接"
+msgstr "AWS SDK not loaded"
+
+msgid "请登录后再使用该功能"
+msgstr "Please login to use this feature"
+
+msgid "请联系管理员分配 GPU 后再尝试"
+msgstr "Please contact admin to assign GPU"
+
+msgid "请选择一个 GPU"
+msgstr "Please select a GPU"
+
+msgid "1. 正在准备上传凭证..."
+msgstr "1. Preparing upload credentials..."
+
+msgid "2. 正在调用 GPU 服务..."
+msgstr "2. Calling GPU service..."
+
+msgid "GPU 服务调用失败"
+msgstr "GPU service call failed"
+
+msgid "3. 模型执行完成，正在拉取结果..."
+msgstr "3. Model execution finished, fetching result..."
+
+msgid "处理完成！如果视频稍后才出现，请刷新或前往“我的作品”查看。"
+msgstr "Done! If video appears later, refresh or check 'My Results'."
+
+msgid "执行失败，请重试"
+msgstr "Execution failed, please retry"
+
+msgid "执行失败，请检查输入后重试。"
+msgstr "Execution failed, check input and retry."
+
+msgid "上一次任务已超时，可重新尝试。"
+msgstr "Last task timed out, retry available."
+
+msgid "已加载最近结果"
+msgstr "Loaded recent result"
+
+msgid "-- 此Space无可用GPU --"
+msgstr "-- No GPU available for this Space --"
+
+msgid "无可用GPU"
+msgstr "No GPU"
+
+msgid "(🔒 需要邀请码)"
+msgstr "(🔒 Invitation Code Required)"
+
+msgid "选择高级GPU需要登录。您可以点击页面右上角的按钮进行登录或注册。"
+msgstr "Login required for advanced GPU."
+
+msgid "上传文件 (支持 LoRA, 最多2个)"
+msgstr "Upload File (LoRA supported, max 2)"
+
+msgid "上传文件 (必须)"
+msgstr "Upload File (Required)"
+
+msgid "您需要登录才能运行此工具。请点击页面右上角的按钮进行登录或注册。"
+msgstr "You need to login to run this tool."
+
+msgid "正在启动..."
+msgstr "Starting..."
+
+msgid "准备提交任务..."
+msgstr "Preparing to submit..."
+
+msgid "正在启动任务..."
+msgstr "Starting task..."
+
+msgid "任务已启动，正在执行..."
+msgstr "Task started, executing..."
+
+msgid "正在生成..."
+msgstr "Generating..."
+
+msgid "错误: "
+msgstr "Error: "
+
+msgid "未知错误"
+msgstr "Unknown error"
+
+msgid "请求失败: "
+msgstr "Request failed: "
+
+msgid "暂无日志..."
+msgstr "No logs..."
+
+msgid "✅ 任务完成!"
+msgstr "✅ Task Completed!"
+
+msgid "❌ 任务失败"
+msgstr "❌ Task Failed"
+
+msgid "结果文件:"
+msgstr "Result File:"
+
+msgid "下载结果文件"
+msgstr "Download Result"
+
+msgid "无法获取结果文件的预览链接: "
+msgstr "Cannot get preview link: "
+
+msgid "获取预览链接时出错: "
+msgstr "Error getting preview link: "
+
+msgid "任务完成，但没有找到输出文件或文件上传失败。"
+msgstr "Task completed but output missing or upload failed."
+
+msgid "请查看日志了解详细信息。"
+msgstr "Check logs for details."
+
+msgid "⚡ 正在执行..."
+msgstr "⚡ Executing..."
+
+msgid "请耐心等待任务完成。"
+msgstr "Please wait patiently."
+
+msgid "❌ 连接错误"
+msgstr "❌ Connection Error"
+
+msgid "无法获取任务状态，请检查网络或稍后重试。"
+msgstr "Cannot get task status, check network."
+
+msgid "已选择: "
+msgstr "Selected: "
+
+msgid "已复制!"
+msgstr "Copied!"
+
+msgid "复制失败，请手动复制。"
+msgstr "Copy failed, please copy manually."
+
+msgid "请前往个人资料页面登录后购买。"
+msgstr "Please go to the Profile page to login and purchase."
+
+msgid "API 使用示例"
+msgstr "API Examples"
+
+msgid "进入聊天室"
+msgstr "Enter Chat"
+
+msgid "生成结果"
+msgstr "Results"
+
+msgid "输出文件："
+msgstr "Output File:"
+
+msgid "若视频没有立即播放，可稍后在"
+msgstr "If video doesn't play immediately, check in"
+
+msgid "我的作品"
+msgstr "My Results"
+
+msgid "中查看。"
+msgstr "."
+
+msgid "任务执行中，完成后最新结果会自动出现在此处，或前往"
+msgstr "Task running, results will appear here or go to"
+
+msgid "查看"
+msgstr "to view"
+
+msgid "上一次任务已超时"
+msgstr "Last task timed out"
+
+msgid "请检查 GPU 服务后重新开始。"
+msgstr "Please check GPU service and retry."
+
+msgid "等待任务开始..."
+msgstr "Waiting for task..."
+
+msgid "执行日志"
+msgstr "Execution Logs"
+
+msgid "该卡片通过浏览器直接调用外部 GPU 服务，暂不提供远程日志。运行状态会在右侧实时更新。"
+msgstr "This card calls external GPU directly from browser, remote logs not available. Status updates on the right."
+
+msgid "等待日志..."
+msgstr "Waiting for logs..."
+
+msgid "状态信息"
+msgstr "Status Info"
+
+msgid "当前状态:"
+msgstr "Current Status:"
+
+msgid "处理中"
+msgstr "Processing"
+
+msgid "就绪"
+msgstr "Ready"
+
+msgid "API密钥:"
+msgstr "API Key:"
+
+msgid "文件库"
+msgstr "File Browser"
+
+msgid "正在加载文件..."
+msgstr "Loading files..."
+
+msgid "文件库中没有文件。"
+msgstr "No files in library."
+
+msgid "预览"
+msgstr "Preview"
+
+msgid "文件名"
+msgstr "Filename"
+
+msgid "大小"
+msgstr "Size"
+
+msgid "修改日期"
+msgstr "Date Modified"
+
+msgid "操作"
+msgstr "Action"
+
+msgid "选择"
+msgstr "Select"
+
+msgid "开始生成"
+msgstr "Start Generation"
+
+msgid "正在生成..."
+msgstr "Generating..."
+
+msgid "您需要登录才能运行此工具。请点击页面右上角的按钮进行登录或注册。"
+msgstr "You need to login to run this tool."
+
+msgid "请先选择一个GPU。"
+msgstr "Please select a GPU."
+
+msgid "准备提交任务..."
+msgstr "Preparing to submit..."
+
+msgid "正在启动..."
+msgstr "Starting..."
+
+msgid "正在启动任务..."
+msgstr "Starting task..."
+
+msgid "任务已启动，正在执行..."
+msgstr "Task started, executing..."
+
+msgid "错误: "
+msgstr "Error: "
+
+msgid "未知错误"
+msgstr "Unknown error"
+
+msgid "请求失败: "
+msgstr "Request failed: "
+
+msgid "暂无日志..."
+msgstr "No logs..."
+
+msgid "✅ 任务完成!"
+msgstr "✅ Task Completed!"
+
+msgid "❌ 任务失败"
+msgstr "❌ Task Failed"
+
+msgid "结果文件:"
+msgstr "Result File:"
+
+msgid "下载结果文件"
+msgstr "Download Result"
+
+msgid "无法获取结果文件的预览链接: "
+msgstr "Cannot get preview link: "
+
+msgid "获取预览链接时出错: "
+msgstr "Error getting preview link: "
+
+msgid "任务完成，但没有找到输出文件或文件上传失败。"
+msgstr "Task completed but output missing or upload failed."
+
+msgid "请查看日志了解详细信息。"
+msgstr "Check logs for details."
+
+msgid "⚡ 正在执行..."
+msgstr "⚡ Executing..."
+
+msgid "请耐心等待任务完成。"
+msgstr "Please wait patiently."
+
+msgid "❌ 连接错误"
+msgstr "❌ Connection Error"
+
+msgid "无法获取任务状态，请检查网络或稍后重试。"
+msgstr "Cannot get task status, check network."
+
+msgid "已选择: "
+msgstr "Selected: "
+
+msgid "已复制!"
+msgstr "Copied!"
+
+msgid "复制失败，请手动复制。"
+msgstr "Copy failed, please copy manually."
+
+msgid "创意描述"
+msgstr "Creative Description"
+
+msgid "描述您想要创建的内容..."
+msgstr "Describe what you want to create..."
+
+msgid "参数设置"
+msgstr "Parameters"
+
+msgid "上传文件"
+msgstr "Upload File"
+
+msgid "从文件库选择"
+msgstr "Select from Drive"
+
+msgid "处理中..."
+msgstr "Processing..."
+
+msgid "示例 #"
+msgstr "Example #"
+
+msgid "使用此提示词"
+msgstr "Use this prompt"
+
+msgid "点击图片查看原图"
+msgstr "Click to view original"
+
+msgid "该卡片需要登录后才能使用，请先"
+msgstr "Login required to use this card, please"
+
+msgid "或"
+msgstr "or"
+
+msgid "你还没有被分配可用的 GPU。请联系管理员在用户管理中为你添加请求地址与密钥。"
+msgstr "You have not been assigned a GPU yet. Please contact admin."
+
+msgid "请选择一个GPU"
+msgstr "Select a GPU"
+
+msgid "-- 请选择一个GPU --"
+msgstr "-- Select a GPU --"
+
+msgid "暂无可用GPU，请联系管理员"
+msgstr "No GPU available, contact admin"
+
+msgid "管理员可以为你分配多个请求地址与密钥，此处以 GPU 名称展示。"
+msgstr "Admins can assign multiple GPUs, shown here by name."
+
+msgid "视频输入"
+msgstr "Video Input"
+
+msgid "音频输入"
+msgstr "Audio Input"
+
+msgid "从网盘选择"
+msgstr "Select from Drive"
+
+msgid "使用外部链接"
+msgstr "Use External Link"
+
+msgid "选择一个视频文件 (.mp4)"
+msgstr "Select a video file (.mp4)"
+
+msgid "未选择文件"
+msgstr "No file selected"
+
+msgid "选择音频文件 (.wav / .mp3)"
+msgstr "Select an audio file (.wav / .mp3)"
+
+msgid "开始处理"
+msgstr "Start Processing"
+
+msgid "部分高级GPU已被锁定。"
+msgstr "Some advanced GPUs are locked."
+
+msgid "绑定邀请码"
+msgstr "Bind Invitation Code"
+
+msgid "来解锁所有功能。"
+msgstr "to unlock all features."
+
+msgid "示例 #"
+msgstr "Example #"
+
+msgid "使用此提示词"
+msgstr "Use this prompt"
+
+msgid "点击图片查看原图"
+msgstr "Click to view original"
+
+msgid "该卡片需要登录后才能使用，请先"
+msgstr "Login required to use this card, please"
+
+msgid "或"
+msgstr "or"
+
+msgid "你还没有被分配可用的 GPU。请联系管理员在用户管理中为你添加请求地址与密钥。"
+msgstr "You have not been assigned a GPU yet. Please contact admin."
+
+msgid "请选择一个GPU"
+msgstr "Select a GPU"
+
+msgid "-- 请选择一个GPU --"
+msgstr "-- Select a GPU --"
+
+msgid "暂无可用GPU，请联系管理员"
+msgstr "No GPU available, contact admin"
+
+msgid "管理员可以为你分配多个请求地址与密钥，此处以 GPU 名称展示。"
+msgstr "Admins can assign multiple GPUs, shown here by name."
+
+msgid "视频输入"
+msgstr "Video Input"
+
+msgid "音频输入"
+msgstr "Audio Input"
+
+msgid "从网盘选择"
+msgstr "Select from Drive"
+
+msgid "使用外部链接"
+msgstr "Use External Link"
+
+msgid "选择一个视频文件 (.mp4)"
+msgstr "Select a video file (.mp4)"
+
+msgid "未选择文件"
+msgstr "No file selected"
+
+msgid "选择音频文件 (.wav / .mp3)"
+msgstr "Select an audio file (.wav / .mp3)"
+
+msgid "开始处理"
+msgstr "Start Processing"
+
+msgid "创意描述"
+msgstr "Creative Description"
+
+msgid "描述您想要创建的内容..."
+msgstr "Describe what you want to create..."
+
+msgid "参数设置"
+msgstr "Parameters"
+
+msgid "上传文件"
+msgstr "Upload File"
+
+msgid "开始生成"
+msgstr "Start Generation"
+
+msgid "处理中..."
+msgstr "Processing..."
+
+msgid "API 使用示例"
+msgstr "API Examples"
+
+msgid "进入聊天室"
+msgstr "Enter Chat"
+
+msgid "生成结果"
+msgstr "Results"
+
+msgid "输出文件："
+msgstr "Output File:"
+
+msgid "若视频没有立即播放，可稍后在"
+msgstr "If video doesn't play immediately, check in"
+
+msgid "我的作品"
+msgstr "My Results"
+
+msgid "中查看。"
+msgstr "."
+
+msgid "任务执行中，完成后最新结果会自动出现在此处，或前往"
+msgstr "Task running, results will appear here or go to"
+
+msgid "查看"
+msgstr "to view"
+
+msgid "上一次任务已超时"
+msgstr "Last task timed out"
+
+msgid "请检查 GPU 服务后重新开始。"
+msgstr "Please check GPU service and retry."
+
+msgid "等待任务开始..."
+msgstr "Waiting for task..."
+
+msgid "执行日志"
+msgstr "Execution Logs"
+
+msgid "该卡片通过浏览器直接调用外部 GPU 服务，暂不提供远程日志。运行状态会在右侧实时更新。"
+msgstr "This card calls external GPU directly from browser, remote logs not available. Status updates on the right."
+
+msgid "等待日志..."
+msgstr "Waiting for logs..."
+
+msgid "状态信息"
+msgstr "Status Info"
+
+msgid "当前状态:"
+msgstr "Current Status:"
+
+msgid "处理中"
+msgstr "Processing"
+
+msgid "就绪"
+msgstr "Ready"
+
+msgid "文件库"
+msgstr "File Browser"
+
+msgid "正在加载文件..."
+msgstr "Loading files..."
+
+msgid "文件库中没有文件。"
+msgstr "No files in library."
+
+msgid "预览"
+msgstr "Preview"
+
+msgid "文件名"
+msgstr "Filename"
+
+msgid "大小"
+msgstr "Size"
+
+msgid "修改日期"
+msgstr "Date Modified"
+
+msgid "操作"
+msgstr "Action"
+
+msgid "选择"
+msgstr "Select"
+
+msgid "请先登录后再选择文件。"
+msgstr "Please login first."
+
+msgid "请求已超时，请稍后重试。"
+msgstr "Request timed out, please retry later."
+
+msgid "超时：未在设定时间内收到推理结果。"
+msgstr "Timeout: No result received within limit."
+
+msgid "任务执行中，请稍候..."
+msgstr "Task running, please wait..."
+
+msgid "请选择文件来源"
+msgstr "Please select file source"
+
+msgid "请选择一个视频文件"
+msgstr "Please select a video file"
+
+msgid "请选择一个音频文件"
+msgstr "Please select an audio file"
+
+msgid "S3 配置缺失，无法生成文件链接"
+msgstr "S3 config missing, cannot generate link"
+
+msgid "请输入视频链接"
+msgstr "Please enter video link"
+
+msgid "请输入音频链接"
+msgstr "Please enter audio link"
+
+msgid "AWS SDK 未加载，无法生成上传链接"
+msgstr "AWS SDK not loaded"
+
+msgid "请登录后再使用该功能"
+msgstr "Please login to use this feature"
+
+msgid "请联系管理员分配 GPU 后再尝试"
+msgstr "Please contact admin to assign GPU"
+
+msgid "请选择一个 GPU"
+msgstr "Please select a GPU"
+
+msgid "1. 正在准备上传凭证..."
+msgstr "1. Preparing upload credentials..."
+
+msgid "2. 正在调用 GPU 服务..."
+msgstr "2. Calling GPU service..."
+
+msgid "GPU 服务调用失败"
+msgstr "GPU service call failed"
+
+msgid "3. 模型执行完成，正在拉取结果..."
+msgstr "3. Model execution finished, fetching result..."
+
+msgid "处理完成！如果视频稍后才出现，请刷新或前往“我的作品”查看。"
+msgstr "Done! If video appears later, refresh or check 'My Results'."
+
+msgid "执行失败，请重试"
+msgstr "Execution failed, please retry"
+
+msgid "执行失败，请检查输入后重试。"
+msgstr "Execution failed, check input and retry."
+
+msgid "上一次任务已超时，可重新尝试。"
+msgstr "Last task timed out, retry available."
+
+msgid "已加载最近结果"
+msgstr "Loaded recent result"
+
+msgid "-- 此Space无可用GPU --"
+msgstr "-- No GPU available for this Space --"
+
+msgid "无可用GPU"
+msgstr "No GPU"
+
+msgid "(🔒 需要邀请码)"
+msgstr "(🔒 Invitation Code Required)"
+
+msgid "选择高级GPU需要登录。您可以点击页面右上角的按钮进行登录或注册。"
+msgstr "Login required for advanced GPU."
+
+msgid "上传文件 (支持 LoRA, 最多2个)"
+msgstr "Upload File (LoRA supported, max 2)"
+
+msgid "上传文件 (必须)"
+msgstr "Upload File (Required)"
+
+msgid "您需要登录才能运行此工具。请点击页面右上角的按钮进行登录或注册。"
+msgstr "You need to login to run this tool."
+
+msgid "正在启动..."
+msgstr "Starting..."
+
+msgid "准备提交任务..."
+msgstr "Preparing to submit..."
+
+msgid "正在启动任务..."
+msgstr "Starting task..."
+
+msgid "任务已启动，正在执行..."
+msgstr "Task started, executing..."
+
+msgid "正在生成..."
+msgstr "Generating..."
+
+msgid "错误: "
+msgstr "Error: "
+
+msgid "未知错误"
+msgstr "Unknown error"
+
+msgid "请求失败: "
+msgstr "Request failed: "
+
+msgid "暂无日志..."
+msgstr "No logs..."
+
+msgid "✅ 任务完成!"
+msgstr "✅ Task Completed!"
+
+msgid "❌ 任务失败"
+msgstr "❌ Task Failed"
+
+msgid "结果文件:"
+msgstr "Result File:"
+
+msgid "下载结果文件"
+msgstr "Download Result"
+
+msgid "无法获取结果文件的预览链接: "
+msgstr "Cannot get preview link: "
+
+msgid "获取预览链接时出错: "
+msgstr "Error getting preview link: "
+
+msgid "任务完成，但没有找到输出文件或文件上传失败。"
+msgstr "Task completed but output missing or upload failed."
+
+msgid "请查看日志了解详细信息。"
+msgstr "Check logs for details."
+
+msgid "⚡ 正在执行..."
+msgstr "⚡ Executing..."
+
+msgid "请耐心等待任务完成。"
+msgstr "Please wait patiently."
+
+msgid "❌ 连接错误"
+msgstr "❌ Connection Error"
+
+msgid "无法获取任务状态，请检查网络或稍后重试。"
+msgstr "Cannot get task status, check network."
+
+msgid "已选择: "
+msgstr "Selected: "
+
+msgid "已复制!"
+msgstr "Copied!"
+
+msgid "复制失败，请手动复制。"
+msgstr "Copy failed, please copy manually."

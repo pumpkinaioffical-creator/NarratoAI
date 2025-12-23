@@ -1,0 +1,539 @@
+{% extends "layout.html" %}
+{% block title %}{{ ai_project.name }} - ModelScope 推理{% endblock %}
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    {% if announcement.enabled and announcement.show_on_projects %}
+    <div style="margin-bottom: 20px; padding: 15px; background-color: 
+        {% if announcement.type == 'warning' %}#fff3cd
+        {% elif announcement.type == 'error' %}#f8d7da
+        {% elif announcement.type == 'success' %}#d4edda
+        {% else %}#d1ecf1{% endif %};
+        border: 1px solid 
+        {% if announcement.type == 'warning' %}#ffeaa7
+        {% elif announcement.type == 'error' %}#f5c6cb
+        {% elif announcement.type == 'success' %}#c3e6cb
+        {% else %}#bee5eb{% endif %};
+        border-radius: 4px; color: #333;">
+        <strong>📢 {{ announcement.title }}</strong><br>
+        {{ announcement.content }}
+    </div>
+    {% endif %}
+
+    <div
+        style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h1 style="margin-top: 0; color: #333;">{{ ai_project.name }}</h1>
+        <p style="color: #666; font-size: 1.1em;">{{ ai_project.description }}</p>
+
+        {% set enabled_demos = (ai_project.demos | selectattr('enabled') | list) if ai_project.demos else [] %}
+        {% set demos_sorted = (enabled_demos | sort(attribute='sort_order')) if enabled_demos else [] %}
+        {% if demos_sorted and demos_sorted|length > 0 %}
+        <div
+            style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+            <h3 style="margin-top: 0; color: #333;">Demo / Examples</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                {% for demo in demos_sorted %}
+                <div style="background: white; border: 1px solid #eee; border-radius: 8px; padding: 12px;">
+                    <div style="font-weight: bold; margin-bottom: 8px;">{{ demo.title or ('示例 #' ~ loop.index) }}</div>
+                    {% if demo.type == 'prompt' %}
+                    <div
+                        style="color: #666; font-size: 13px; white-space: pre-wrap; max-height: 120px; overflow: auto; border: 1px solid #f0f0f0; padding: 8px; border-radius: 8px; background: #fafafa;">
+                        {{ demo.prompt }}</div>
+                    <button type="button"
+                        style="margin-top: 10px; padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                        onclick="applyMsDemoPrompt({{ demo.prompt | tojson }});">使用此提示词</button>
+                    {% elif demo.type == 'image' %}
+                    <a href="{{ demo.url }}" target="_blank" style="display:block;">
+                        <img src="{{ demo.url }}" alt="demo"
+                            style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #f0f0f0;">
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if session.get('logged_in') %}
+        <div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd;">
+            <h3 style="margin-top: 0; color: #333;">生成图片</h3>
+
+            <form id="inference-form" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" id="timeout-seconds" value="{{ timeout_seconds }}">
+                <input type="hidden" name="model_id" value="{{ current_model.id }}">
+
+                <div style="padding: 10px; background: #f0f2f5; border-radius: 4px; border: 1px solid #ddd;">
+                    <span style="font-weight: bold;">当前模型:</span> {{ current_model.name }}
+                </div>
+
+                <div id="image-input-container" style="display: {% if current_model.supports_image_input %}block{% else %}none{% endif %};">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">原图 (可选)</label>
+                    <input type="url" name="image_url" id="image-url-input" placeholder="输入图片直链，或从网盘选择..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+                    <button type="button" id="pick-file-btn" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        📁 从网盘选择图片
+                    </button>
+                    <small style="color: #666; display: block; margin-top: 5px;">上传原图进行编辑，或留空进行文生图。</small>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">分辨率</label>
+                    <select name="resolution_id" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        {% for res_id in enabled_resolutions %}
+                            {% set res = none %}
+                            {# Find resolution object from ID #}
+                            {% if res_id == '720x720' %}{% set res_name = '720x720 (方形)' %}{% endif %}
+                            {% if res_id == '1024x1024' %}{% set res_name = '1024x1024 (方形)' %}{% endif %}
+                            {% if res_id == '1280x720' %}{% set res_name = '1280x720 (横向)' %}{% endif %}
+                            {% if res_id == '720x1280' %}{% set res_name = '720x1280 (纵向)' %}{% endif %}
+                            {% if res_id == '1920x1080' %}{% set res_name = '1920x1080 (全高清横向)' %}{% endif %}
+                            {% if res_id == '1080x1920' %}{% set res_name = '1080x1920 (全高清纵向)' %}{% endif %}
+
+                            <option value="{{ res_id }}" {% if res_id == '1024x1024' %}selected{% endif %}>{{ res_name or res_id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">提示词</label>
+                    <textarea name="prompt" id="prompt-input" rows="4" placeholder="描述你想要生成的图片..." required
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: Arial, sans-serif;"></textarea>
+                </div>
+
+                <button type="submit" id="submit-btn" {% if not can_submit %}disabled{% endif %}
+                    data-github-bound="{{ 'true' if is_github_user else 'false' }}"
+                    style="background: {% if can_submit %}#007bff{% else %}#ccc{% endif %}; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: {% if can_submit %}pointer{% else %}not-allowed{% endif %}; font-size: 1em; font-weight: bold;">
+                    {% if wait_seconds > 0 %}
+                        请等待 {{ wait_seconds }} 秒...
+                    {% else %}
+                        开始生成
+                    {% endif %}
+                </button>
+            </form>
+
+            <!-- Status & Result Area -->
+            <div id="status-area" style="display: {% if inference_status %}block{% else %}none{% endif %}; margin-top: 20px;">
+                <!-- Processing State -->
+                <div id="processing-state" style="display: {% if inference_status and inference_status.status == 'processing' %}block{% else %}none{% endif %}; padding: 15px; background: #e3f2fd; border-radius: 4px; border-left: 4px solid #1976d2;">
+                    <strong style="color: #1976d2;">🚀 正在生成中...</strong>
+                    <p style="margin: 10px 0 0 0; color: #555;">任务已提交，通常需要 10-60 秒，请耐心等待。</p>
+                    <div id="progress-bar" style="margin-top: 10px; height: 4px; background: #ccc; border-radius: 2px; overflow: hidden;">
+                        <div style="height: 100%; background: #1976d2; width: 30%; animation: progress 2s infinite;"></div>
+                    </div>
+                </div>
+
+                <!-- Success State -->
+                <div id="success-state" style="display: {% if inference_status and inference_status.status == 'success' %}block{% else %}none{% endif %}; padding: 15px; background: #f1f8e9; border-radius: 4px; border-left: 4px solid #689f38;">
+                    <strong style="color: #689f38;">✓ 生成成功</strong>
+                    {% if is_admin and inference_status and inference_status.elapsed_seconds %}
+                    <span style="color: #666; font-size: 0.9em; margin-left: 10px;">(耗时: {{ inference_status.elapsed_seconds }}s)</span>
+                    {% endif %}
+                    <div style="margin-top: 15px; text-align: center;">
+                        <a id="result-link" href="{{ inference_status.result_url if inference_status else '#' }}" target="_blank">
+                            <img id="result-image" src="{{ inference_status.result_url if inference_status else '' }}" style="max-width: 100%; max-height: 500px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        </a>
+                        <div style="margin-top: 10px;">
+                            <a id="download-link" href="{{ inference_status.result_url if inference_status else '#' }}" download class="btn-download" style="display: inline-block; padding: 8px 16px; background: #28a745; color: white; text-decoration: none; border-radius: 4px;">下载图片</a>
+                            <button onclick="clearResult()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">清除结果</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Failed State -->
+                <div id="failed-state" style="display: {% if inference_status and inference_status.status == 'failed' %}block{% else %}none{% endif %}; padding: 15px; background: #ffebee; border-radius: 4px; border-left: 4px solid #d32f2f;">
+                    <strong style="color: #d32f2f;">✗ 生成失败</strong>
+                    <p style="margin: 10px 0 0 0; color: #555;">抱歉，任务执行失败。可能是提示词违规或服务暂时繁忙。</p>
+                    <button onclick="clearResult()" style="margin-top: 10px; padding: 6px 12px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">重试</button>
+                </div>
+            </div>
+
+        </div>
+        {% else %}
+        <div
+            style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeaa7; text-align: center;">
+            <p style="margin: 0;">请<a href="{{ url_for('auth.login') }}"
+                    style="color: #0066cc; text-decoration: none;"><strong>登录</strong></a>以使用此功能</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    @keyframes progress {
+        0% { width: 0%; }
+        50% { width: 100%; }
+        100% { width: 100%; }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Demo prompt helper
+        window.applyMsDemoPrompt = function(text) {
+            const el = document.getElementById('prompt-input');
+            if (!el) {
+                alert('请先登录以使用此功能');
+                return;
+            }
+            el.value = text || '';
+            el.focus();
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const form = document.getElementById('inference-form');
+        if (!form) return;
+
+        // --- File Picker Logic (Copied and adapted from space_websockets.html) ---
+        const pickFileBtn = document.getElementById('pick-file-btn');
+        if (pickFileBtn) {
+            pickFileBtn.addEventListener('click', function () {
+                openFilePicker();
+            });
+        }
+
+        function openFilePicker() {
+            const modal = document.createElement('div');
+            modal.className = 'file-picker-modal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 800px; max-height: 80vh; overflow-y: auto; width: 90%;';
+            modalContent.innerHTML = `
+                <h3 style="margin-top: 0;">选择图片</h3>
+                <div style="display:flex; gap: 10px; align-items:center; margin: 10px 0 15px 0; flex-wrap: wrap;">
+                    <input id="file-search-input" type="text" placeholder="搜索文件名..." style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    <button id="file-search-btn" type="button" style="padding: 10px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">搜索</button>
+                    <button id="file-search-clear-btn" type="button" style="padding: 10px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">清除</button>
+                </div>
+                <div style="display:flex; gap: 10px; align-items:center; margin: 0 0 15px 0; flex-wrap: wrap;">
+                    <input id="file-upload-input" type="file" accept="image/*" style="flex: 1; min-width: 240px;">
+                    <button id="file-upload-btn" type="button" style="padding: 10px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">上传到网盘</button>
+                    <span id="file-upload-status" style="color:#666;"></span>
+                </div>
+                <div id="file-list" style="margin: 20px 0;">加载中...</div>
+                <button id="close-modal" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">关闭</button>
+            `;
+
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            document.getElementById('close-modal').addEventListener('click', function () {
+                document.body.removeChild(modal);
+            });
+
+            const searchInput = document.getElementById('file-search-input');
+            const searchBtn = document.getElementById('file-search-btn');
+            const searchClearBtn = document.getElementById('file-search-clear-btn');
+            const uploadInput = document.getElementById('file-upload-input');
+            const uploadBtn = document.getElementById('file-upload-btn');
+            const uploadStatus = document.getElementById('file-upload-status');
+
+            function loadFileList(query) {
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = '加载中...';
+                const q = (query || '').trim();
+                const url = q ? `/api/my_s3_files?q=${encodeURIComponent(q)}` : '/api/my_s3_files';
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.files && data.files.length > 0) {
+                            // Filter for images only
+                            const images = data.files.filter(f => f.is_image);
+
+                            if (images.length === 0) {
+                                fileList.innerHTML = '<p style="color: #666;">没有找到图片文件</p>';
+                                return;
+                            }
+
+                            fileList.innerHTML = images.map(file => `
+                                <div style="padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px;"
+                                     onclick="selectFile('${file.preview_url}', this.closest('.file-picker-modal'))"
+                                     onmouseover="this.style.background='#f8f9fa'"
+                                     onmouseout="this.style.background='white'">
+                                    <img src="${file.preview_url}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                    <div>
+                                        <strong>${file.filename}</strong><br>
+                                        <small style="color: #666;">${(file.size / 1024).toFixed(2)} KB</small>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            fileList.innerHTML = '<p style="color: #666;">暂无文件</p>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('加载文件失败:', err);
+                        fileList.innerHTML = '<p style="color: red;">加载失败: ' + err.message + '</p>';
+                    });
+            }
+
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function () {
+                    loadFileList(searchInput ? searchInput.value : '');
+                });
+            }
+            if (searchClearBtn) {
+                searchClearBtn.addEventListener('click', function () {
+                    if (searchInput) searchInput.value = '';
+                    loadFileList('');
+                });
+            }
+            if (searchInput) {
+                searchInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        loadFileList(searchInput.value);
+                    }
+                });
+            }
+
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', async function () {
+                    if (!uploadInput || !uploadInput.files || uploadInput.files.length === 0) {
+                        alert('请选择要上传的文件');
+                        return;
+                    }
+
+                    uploadBtn.disabled = true;
+                    if (uploadStatus) uploadStatus.textContent = '上传中...';
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', uploadInput.files[0]);
+                        formData.append('folder', 'gen_img_upload');
+
+                        const resp = await fetch('/api/my_s3_upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        if (!resp.ok || !data.success) {
+                            throw new Error(data.error || '上传失败');
+                        }
+
+                        if (uploadStatus) uploadStatus.textContent = '上传成功';
+                        if (data.url) {
+                            document.getElementById('image-url-input').value = data.url;
+                            document.body.removeChild(modal);
+                            return;
+                        }
+
+                        loadFileList(searchInput ? searchInput.value : '');
+                    } catch (err) {
+                        if (uploadStatus) uploadStatus.textContent = '上传失败';
+                        alert('上传失败: ' + err.message);
+                    } finally {
+                        uploadBtn.disabled = false;
+                    }
+                });
+            }
+
+            loadFileList('');
+        }
+
+        window.selectFile = function (url, modal) {
+            document.getElementById('image-url-input').value = url;
+            document.body.removeChild(modal);
+        };
+        // --- End File Picker Logic ---
+
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // GitHub check
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn.disabled) return;
+
+            if (submitBtn.dataset.githubBound !== 'true') {
+                if (confirm('请先去个人资料绑定git hub才能免费使用。是否现在去绑定？')) {
+                    window.location.href = '{{ url_for("auth.github_bind") }}';
+                }
+                return;
+            }
+
+            // Build payload
+            const formData = new FormData(form);
+            const payload = {
+                model_id: formData.get('model_id'),
+                resolution_id: formData.get('resolution_id'),
+                prompt: formData.get('prompt')
+            };
+
+            // Add image URL if visible and populated
+            const imageUrlInput = document.getElementById('image-url-input');
+            if (imageUrlInput && imageUrlInput.offsetParent !== null && imageUrlInput.value.trim()) {
+                payload.image_urls = [imageUrlInput.value.trim()];
+            }
+
+            // UI Updates
+            const statusArea = document.getElementById('status-area');
+            const processingState = document.getElementById('processing-state');
+            const successState = document.getElementById('success-state');
+            const failedState = document.getElementById('failed-state');
+
+            statusArea.style.display = 'block';
+            processingState.style.display = 'block';
+            successState.style.display = 'none';
+            failedState.style.display = 'none';
+
+            submitBtn.disabled = true;
+            submitBtn.style.background = '#ccc';
+            submitBtn.textContent = '正在提交...';
+
+            try {
+                const response = await fetch('/api/image_gen/submit/{{ ai_project.id }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Handle rate limit/lockout
+                    if (response.status === 429 && data.wait_seconds) {
+                        startCooldown(data.wait_seconds);
+                    } else if (data.require_github) {
+                        alert(data.error);
+                        submitBtn.disabled = false;
+                        submitBtn.style.background = '#007bff';
+                        submitBtn.textContent = '开始生成';
+                        statusArea.style.display = 'none';
+                        return;
+                    } else {
+                        // General error
+                        throw new Error(data.error || '提交失败');
+                    }
+                    if (response.status !== 429) {
+                        throw new Error(data.error);
+                    }
+                    return;
+                }
+
+                // Success submit, start cooldown and polling
+                const timeoutSeconds = parseInt(document.getElementById('timeout-seconds').value) || 300;
+                // Button stays disabled for "Button Lockout" period, handled by backend status check
+                // For UI, we can just say "Processing..."
+                submitBtn.textContent = '生成中...';
+
+                startPolling();
+
+            } catch (err) {
+                console.error(err);
+                processingState.style.display = 'none';
+                failedState.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.style.background = '#007bff';
+                submitBtn.textContent = '开始生成';
+                alert(err.message);
+            }
+        });
+
+        let pollInterval = null;
+
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/image_gen/status/{{ ai_project.id }}');
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        clearInterval(pollInterval);
+                        return;
+                    }
+
+                    const submitBtn = document.getElementById('submit-btn');
+
+                    if (data.status === 'success') {
+                        clearInterval(pollInterval);
+                        document.getElementById('processing-state').style.display = 'none';
+                        document.getElementById('success-state').style.display = 'block';
+
+                        document.getElementById('result-image').src = data.result_url;
+                        document.getElementById('result-link').href = data.result_url;
+                        document.getElementById('download-link').href = data.result_url;
+
+                        // Reset button
+                        submitBtn.disabled = false;
+                        submitBtn.style.background = '#007bff';
+                        submitBtn.textContent = '开始生成';
+
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        document.getElementById('processing-state').style.display = 'none';
+                        document.getElementById('failed-state').style.display = 'block';
+
+                        submitBtn.disabled = false;
+                        submitBtn.style.background = '#007bff';
+                        submitBtn.textContent = '开始生成';
+
+                    } else if (data.status === 'processing') {
+                        // Still processing
+                        if (data.wait_seconds > 0) {
+                            submitBtn.textContent = `请等待 ${data.wait_seconds} 秒...`;
+                        }
+                    } else {
+                        // Idle or unknown
+                        if (data.can_submit) {
+                            clearInterval(pollInterval);
+                            submitBtn.disabled = false;
+                            submitBtn.style.background = '#007bff';
+                            submitBtn.textContent = '开始生成';
+                        } else if (data.wait_seconds > 0) {
+                             startCooldown(data.wait_seconds);
+                        }
+                    }
+
+                } catch (err) {
+                    console.error('Poll error:', err);
+                }
+            }, 2000);
+        }
+
+        function startCooldown(seconds) {
+            const submitBtn = document.getElementById('submit-btn');
+            let remaining = seconds;
+
+            if (pollInterval) clearInterval(pollInterval);
+
+            const timer = setInterval(() => {
+                remaining--;
+                submitBtn.disabled = true;
+                submitBtn.style.background = '#ccc';
+                submitBtn.textContent = `请等待 ${remaining} 秒...`;
+
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    submitBtn.disabled = false;
+                    submitBtn.style.background = '#007bff';
+                    submitBtn.textContent = '开始生成';
+                }
+            }, 1000);
+        }
+
+        window.clearResult = async function() {
+            try {
+                await fetch('/api/image_gen/clear/{{ ai_project.id }}', { method: 'POST' });
+                document.getElementById('status-area').style.display = 'none';
+                document.getElementById('image-url-input').value = ''; // Clear input image too
+
+                // Re-enable button
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = false;
+                submitBtn.style.background = '#007bff';
+                submitBtn.textContent = '开始生成';
+
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        // If loaded with active status (e.g. refresh page)
+        {% if inference_status and inference_status.status == 'processing' %}
+        startPolling();
+        {% elif wait_seconds > 0 %}
+        startCooldown({{ wait_seconds }});
+        {% endif %}
+    });
+</script>
+{% endblock %}

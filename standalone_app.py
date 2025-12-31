@@ -261,7 +261,7 @@ async def main():
         if real_video_dur_sum > audio_dur + 0.05:
             # 视频比音频长，截断视频? 或者填充静音? 通常保留视频长度
             filter_c = f"[1:a]apad[a]"
-            map_v = "[0:v]"
+            map_v = "0:v" # 直接使用 0:v 引用输入流
         elif audio_dur > real_video_dur_sum + 0.05:
             pad = audio_dur - real_video_dur_sum
             # 使用 clone 模式复制最后一帧，比黑屏更平滑
@@ -269,14 +269,19 @@ async def main():
             map_v = "[v]"
         else:
             filter_c = f"[1:a]anull[a]"
-            map_v = "[0:v]"
+            map_v = "0:v" # 直接使用 0:v 引用输入流
 
         cmd_merge = ["ffmpeg", "-y", "-i", f_combined, "-i", f_wav]
 
-        if filter_c != f"[1:a]anull[a]" or map_v != "[0:v]":
-            cmd_merge.extend(["-filter_complex", filter_c, "-map", map_v, "-map", "[a]"])
+        # 修正逻辑：只有当我们需要使用 filter_complex 中的视频流时才 map [v]
+        # 否则，如果视频流没有进 filter_complex (即只处理音频)，我们直接 map 0:v
+
+        if map_v == "0:v":
+            # 视频流未经过处理，仅处理音频
+            cmd_merge.extend(["-filter_complex", filter_c, "-map", "0:v", "-map", "[a]"])
         else:
-            cmd_merge.extend(["-map", "0:v", "-map", "1:a"])
+             # 视频流经过处理（tpad等），使用 filter 输出的标签
+            cmd_merge.extend(["-filter_complex", filter_c, "-map", map_v, "-map", "[a]"])
 
         # 再次强制输出参数，确保合并后的片段也是标准的
         cmd_merge.extend(["-t", str(final_dur)])

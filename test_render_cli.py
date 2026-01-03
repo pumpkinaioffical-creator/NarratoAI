@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import edge_tts
-from app import process_render
+from render_engine import process_render
 
 INPUT_JSON = "1.json"
 INPUT_VIDEO = "1.mkv"

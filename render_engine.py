@@ -334,14 +334,17 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             "ffmpeg", "-y",
             "-i", p_seg_v,
             "-i", p_seg_a,
-            "-filter_complex", f"[1:a]{final_audio_filter}[aout]",
+            "-filter_complex", f"[1:a]apad=whole_dur={video_dur}[aout]",
             "-map", "0:v", "-map", "[aout]",
             "-c:v", "copy", "-c:a", "aac",
-            "-shortest", 
+            "-t", str(video_dur),
             p_seg_out
         ]
         run_ffmpeg(cmd_merge, verbose=verbose)
         segment_files.append(p_seg_out)
+        
+        # 更新视频时长用于字幕计时
+        video_dur = get_duration(p_seg_out)
         
         # D. 记录字幕 (SRT格式)
         # 格式: 

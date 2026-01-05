@@ -45,9 +45,12 @@ async def main():
 
     print("Generating audio and preparing script data...")
     
-    # Create temp dir for audio if not exists
-    if not os.path.exists("temp_audio"):
-        os.makedirs("temp_audio")
+    # Clear and recreate temp directories (no caching)
+    import shutil
+    for temp_dir in ["temp_audio", "temp_render"]:
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        os.makedirs(temp_dir)
 
     for idx, item in enumerate(data):
         voice_text = item.get("voiceover", "")
@@ -56,16 +59,8 @@ async def main():
         if not fragments:
             print(f"Skipping item {idx}: No fragments.")
             continue
-            
-        # Pass all fragments to app.py for multi-clip support
-        scene = {
-            "fragments": fragments,  # Pass all fragments
-            "voiceover": voice_text
-        }
-        script_data.append(scene)
         
-        
-        # Generator Audio
+        # Generator Audio first, only add scene if audio is ready
         # Use prefix based on JSON filename to avoid collision between 1.json and 2.json
         json_prefix = os.path.basename(INPUT_JSON).split('.')[0]
         audio_filename = os.path.abspath(f"temp_audio/tts_{json_prefix}_{idx}.mp3")
@@ -75,13 +70,16 @@ async def main():
                 print(f"Generated audio for scene {idx}")
             except Exception as e:
                 print(f"Failed to generate audio for scene {idx}: {e}")
-                continue
+                continue  # Skip this scene entirely
         
-        # process_render expects audio_files keys to be str(idx) matching script_data
-        # But wait, logic in app.py:
-        # for idx, scene in enumerate(script_data):
-        #     audio_path = audio_files.get(str(idx))
-        # So we must match the NEW script_data index.
+        # Only add scene after audio is confirmed
+        scene = {
+            "fragments": fragments,
+            "voiceover": voice_text
+        }
+        script_data.append(scene)
+        
+        # audio_files key must match script_data index
         audio_files[str(len(script_data)-1)] = audio_filename
 
     print(f"Prepared {len(script_data)} scenes.")

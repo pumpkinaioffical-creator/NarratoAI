@@ -56,7 +56,7 @@ def run_ffmpeg(cmd, verbose=False, cwd=None):
         raise subprocess.CalledProcessError(result.returncode, cmd)
     return result
 
-def process_render(video_path, script_data, audio_files, verbose=False, resolution="native"):
+def process_render(video_path, script_data, audio_files, verbose=False, resolution="native", gpu=False):
     """
     核心渲染逻辑:
     1. 遍历脚本，切割视频，处理音频同步
@@ -67,7 +67,15 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     Args:
         verbose: If True, print progress to terminal (CLI mode)
         resolution: 'native' 保持原分辨率, '360p' 缩放到640x360
+        gpu: If True, use NVIDIA GPU (h264_nvenc) for encoding
     """
+    # 根据 gpu 参数选择编码器
+    if gpu:
+        video_codec = ["h264_nvenc", "-preset", "p4", "-cq", "23"]
+        if verbose:
+            print("[GPU] 使用 NVIDIA NVENC 硬件加速编码")
+    else:
+        video_codec = ["libx264", "-preset", "fast", "-crf", "23"]
     output_filename = "final_output.mp4"
     final_path = os.path.join(TEMP_DIR, output_filename)
     
@@ -181,9 +189,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             ]
             if vf:
                 cmd_frag.extend(["-vf", vf])
-            cmd_frag.extend([
-                "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                "-an",
+            cmd_frag.extend(["-c:v"] + video_codec + ["-an",
                 frag_file
             ])
             
@@ -213,8 +219,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             cmd_concat = [
                 "ffmpeg", "-y", "-f", "concat", "-safe", "0",
                 "-i", concat_list,
-                "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                "-an",
+            ] + ["-c:v"] + video_codec + ["-an",
                 p_seg_v
             ]
             run_ffmpeg(cmd_concat, verbose=verbose)
@@ -281,9 +286,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                 ]
                 if scale_filter:
                     cmd_extend.extend(["-vf", scale_filter])
-                cmd_extend.extend([
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                    "-an",
+                cmd_extend.extend(["-c:v"] + video_codec + ["-an",
                     extend_file
                 ])
                 
@@ -300,8 +303,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                     cmd_concat_ext = [
                         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
                         "-i", concat_extend,
-                        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                        "-an",
+                    ] + ["-c:v"] + video_codec + ["-an",
                         p_seg_v_extended
                     ]
                     run_ffmpeg(cmd_concat_ext, verbose=verbose)
@@ -374,10 +376,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     # Use relative filename since we run with cwd=TEMP_DIR
     cmd_concat = [
         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-        "-i", "filelist.txt",  # relative to TEMP_DIR
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "128k",
-        "merged_tmp.mp4"  # relative to TEMP_DIR
+        "-i", "filelist.txt",
+        "-c:v"] + video_codec + ["-c:a", "aac", "-b:a", "128k",
+        "merged_tmp.mp4"
     ]
     # 注意：cwd设为TEMP_DIR以便读取 filelist
     update_progress("合并片段", "正在拼接所有片段...")

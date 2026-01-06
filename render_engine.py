@@ -233,126 +233,65 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
         run_ffmpeg(["ffmpeg", "-y", "-i", audio_path, p_seg_a], verbose=verbose)
         audio_dur = get_duration(p_seg_a)
         
-        final_audio_filter = "anull" # 默认不处理
         
-        # 如果音频比视频长，自动延长最后一个片段
-        if audio_dur > video_dur + 0.1:
-            diff = audio_dur - video_dur
-            vo_text = scene.get('voiceover', '').strip()
-            vo_snippet = (vo_text[:30] + '..') if len(vo_text) > 30 else vo_text
+        # B. 计算视频变速比例，使视频时长匹配音频时长
+        # speed_ratio > 1 表示加速（视频太长）
+        # speed_ratio < 1 表示减速（视频太短）
+        if video_dur > 0 and audio_dur > 0:
+            speed_ratio = video_dur / audio_dur
+        else:
+            speed_ratio = 1.0
+        
+        # 限制变速范围，避免太极端（0.5x - 2.0x）
+        speed_ratio = max(0.5, min(2.0, speed_ratio))
+        
+        vo_text = scene.get('voiceover', '').strip()
+        vo_snippet = (vo_text[:30] + '..') if len(vo_text) > 30 else vo_text
+        
+        if abs(speed_ratio - 1.0) > 0.05:
+            # 需要变速
+            if speed_ratio > 1:
+                print(f"[自动变速] 片段 {idx+1}: 视频加速 {speed_ratio:.2f}x (视频{video_dur:.1f}s → 音频{audio_dur:.1f}s)")
+            else:
+                print(f"[自动变速] 片段 {idx+1}: 视频减速 {speed_ratio:.2f}x (视频{video_dur:.1f}s → 音频{audio_dur:.1f}s)")
             
-            # 获取最后一个片段的结束时间，从那里继续延长
-            last_frag = fragments[-1]
-            last_frag_end = parse_time(last_frag.get('end', '00:05'))
-            
-            # 计算需要延长多少
-            extend_start = last_frag_end
-            extend_dur = diff + 0.5  # 多加0.5秒确保足够
-            
-            # 检查是否超出源视频
-            if extend_start + extend_dur > source_video_duration:
-                # 如果会超出，只能延长到视频末尾
-                extend_dur = source_video_duration - extend_start
-                if extend_dur <= 0:
-                    # 源视频已经用完了，从头开始循环
-                    extend_start = 0
-                    extend_dur = diff + 0.5
-                    if extend_dur > source_video_duration:
-                        extend_dur = source_video_duration
-            
-            if extend_dur > 0:
-                print(f"[自动延长] 片段 {idx+1}: 从 {extend_start:.1f}s 延长 {extend_dur:.1f}s")
-                
-                # 切割延长部分
-                extend_file = os.path.join(TEMP_DIR, f"extend_{idx}.mp4")
-                
-                # 使用与主片段相同的分辨率逻辑
-                scale_filter = None
-                if resolution and resolution != "native":
-                    res_map = {
-                        "360p": "scale=640:360",
-                        "480p": "scale=854:480",
-                        "720p": "scale=1280:720",
-                        "1080p": "scale=1920:1080",
-                    }
-                    if resolution in res_map:
-                        scale_filter = res_map[resolution]
-                    elif "x" in resolution:
-                        scale_filter = f"scale={resolution.replace('x', ':')}"
-                
-                cmd_extend = [
-                    "ffmpeg", "-y", "-ss", str(extend_start), "-t", str(extend_dur),
-                    "-i", video_path
-                ]
-                if scale_filter:
-                    cmd_extend.extend(["-vf", scale_filter])
-                cmd_extend.extend(["-c:v"] + video_codec + ["-an",
-                    extend_file
-                ])
-                
-                try:
-                    run_ffmpeg(cmd_extend, verbose=verbose)
-                    
-                    # 把延长部分拼接到原视频后面
-                    concat_extend = os.path.join(TEMP_DIR, f"concat_ext_{idx}.txt")
-                    with open(concat_extend, 'w', encoding='utf-8') as f:
-                        f.write(f"file '{os.path.abspath(p_seg_v)}'\n")
-                        f.write(f"file '{os.path.abspath(extend_file)}'\n")
-                    
-                    p_seg_v_extended = os.path.join(TEMP_DIR, f"seg_v_{idx}_ext.mp4")
-                    cmd_concat_ext = [
-                        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-                        "-i", concat_extend,
-                    ] + ["-c:v"] + video_codec + ["-an",
-                        p_seg_v_extended
-                    ]
-                    run_ffmpeg(cmd_concat_ext, verbose=verbose)
-                    
-                    # 用延长后的视频替换原来的
-                    import shutil
-                    shutil.move(p_seg_v_extended, p_seg_v)
-                    
-                    # 更新视频时长
-                    video_dur = get_duration(p_seg_v)
-                    
-                except Exception as e:
-                    print(f"[警告] 自动延长失败: {e}")
-            
-            msg = f"片段 {idx+1} [内容: {vo_snippet}]: 已自动延长视频 {diff:.2f}s"
+            msg = f"片段 {idx+1} [{vo_snippet}]: 变速 {speed_ratio:.2f}x"
             report_log.append(msg)
+            
+            # 使用 setpts 调整视频速度
+            pts_factor = 1.0 / speed_ratio
+            video_filter = f"setpts={pts_factor}*PTS"
+            
+            # 变速后的视频
+            p_seg_v_speed = os.path.join(TEMP_DIR, f"seg_v_{idx}_speed.mp4")
+            cmd_speed = [
+                "ffmpeg", "-y",
+                "-i", p_seg_v,
+                "-vf", video_filter,
+                "-c:v"] + video_codec + ["-an",
+                p_seg_v_speed
+            ]
+            run_ffmpeg(cmd_speed, verbose=verbose)
+            p_seg_v = p_seg_v_speed
+            video_dur = get_duration(p_seg_v)
         
-
-        # C. 合并当前片段 (视频 + 音频)
-        # 注意：视频长度和音频长度可能不完全一致（由于帧率对齐等），
-        # 如果视频延长后比音频略长，或者略短。
-        # 使用 -shortest 可能会截断音频。如果视频定格需求，需要 pad。
-        # 为简单起见，且满足“延伸视频”的需求，我们假设视频已经足够长（或者已到末尾）。
-        # 如果视频比音频长，shortest会让视频适应音频。
-        # 如果音频比视频长(素材耗尽)，shortest会让音频被截断。这是合理的。
-        
-        # 此时 final_audio_filter 应该是空的或者 anull
-        
+        # C. 合并视频和音频
         cmd_merge = [
             "ffmpeg", "-y",
             "-i", p_seg_v,
             "-i", p_seg_a,
-            "-filter_complex", f"[1:a]apad=whole_dur={video_dur}[aout]",
-            "-map", "0:v", "-map", "[aout]",
+            "-map", "0:v", "-map", "1:a",
             "-c:v", "copy", "-c:a", "aac",
-            "-t", str(video_dur),
+            "-shortest",
             p_seg_out
         ]
         run_ffmpeg(cmd_merge, verbose=verbose)
         segment_files.append(p_seg_out)
         
-        # 更新视频时长用于字幕计时
+        # 更新实际输出时长用于字幕计时
         video_dur = get_duration(p_seg_out)
         
         # D. 记录字幕 (SRT格式)
-        # 格式: 
-        # 1
-        # 00:00:00,000 --> 00:00:05,000
-        # 字幕内容
         def fmt_srt_time(seconds):
             m, s = divmod(seconds, 60)
             h, m = divmod(m, 60)

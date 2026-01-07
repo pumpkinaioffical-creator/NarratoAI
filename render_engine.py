@@ -71,11 +71,24 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     """
     # 根据 gpu 参数选择编码器
     if gpu:
-        video_codec = ["h264_nvenc", "-preset", "p4", "-cq", "23"]
+        # 最大化 GPU 性能：p1最快预设 + llhq低延迟高质量 + 2-pass lookahead
+        video_codec = [
+            "h264_nvenc", 
+            "-preset", "p1",           # p1 是最快的预设 (p1-p7)
+            "-tune", "ll",             # 低延迟模式
+            "-rc", "vbr",              # 可变比特率
+            "-cq", "23",               # 质量参数
+            "-b:v", "0",               # 不限制比特率
+            "-spatial-aq", "1",        # 空间自适应量化
+            "-temporal-aq", "1",       # 时间自适应量化
+        ]
+        # 硬件解码加速参数（用于输入）
+        hw_decode = ["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"]
         if verbose:
-            print("[GPU] 使用 NVIDIA NVENC 硬件加速编码")
+            print("[GPU] 使用 NVIDIA NVENC 极速模式 (preset=p1, hwaccel=cuda)")
     else:
         video_codec = ["libx264", "-preset", "fast", "-crf", "23"]
+        hw_decode = []
     output_filename = "final_output.mp4"
     final_path = os.path.join(TEMP_DIR, output_filename)
     
@@ -184,7 +197,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                 vf = scale_filter.rstrip(',') if scale_filter else None
             
             cmd_frag = [
-                "ffmpeg", "-y", "-ss", str(frag_start), "-t", str(frag_dur),
+                "ffmpeg", "-y"
+            ] + hw_decode + [
+                "-ss", str(frag_start), "-t", str(frag_dur),
                 "-i", video_path
             ]
             if vf:
@@ -281,7 +296,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                         scale_filter = f"scale={resolution.replace('x', ':')}"
                 
                 cmd_extend = [
-                    "ffmpeg", "-y", "-ss", str(extend_start), "-t", str(extend_dur),
+                    "ffmpeg", "-y"
+                ] + hw_decode + [
+                    "-ss", str(extend_start), "-t", str(extend_dur),
                     "-i", video_path
                 ]
                 if scale_filter:

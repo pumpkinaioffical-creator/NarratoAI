@@ -99,6 +99,14 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
 
     # 1. 处理每个片段
     for idx, scene in enumerate(script_data):
+        vo_text = scene.get('voiceover', '')
+        vo_preview = (vo_text[:40] + '...') if len(vo_text) > 40 else vo_text
+        
+        if verbose:
+            print(f"\n{'='*60}")
+            print(f"[场景 {idx+1}/{total_scenes}] 开始处理")
+            print(f"  旁白: {vo_preview}")
+        
         # 支持新格式 (fragments列表) 和旧格式 (time_start/time_end)
         fragments = scene.get('fragments', [])
         if not fragments:
@@ -106,6 +114,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             start_str = scene.get('time_start', '00:00')
             end_str = scene.get('time_end', '00:05')
             fragments = [{'start': start_str, 'end': end_str, 'speed': 1.0}]
+        
+        if verbose:
+            print(f"  视频片段数: {len(fragments)}")
         
         def parse_time(t_str):
             t_str = str(t_str)
@@ -134,6 +145,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
         # 获取视频总时长
         source_video_duration = get_duration(video_path)
         
+        if verbose:
+            print(f"  源视频总时长: {source_video_duration:.2f}秒")
+        
         # 处理多片段: 切割每个片段并拼接
         frag_files = []
         total_video_dur = 0
@@ -143,10 +157,19 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             frag_end = parse_time(frag.get('end', '00:05'))
             frag_speed = float(frag.get('speed', 1.0))
             
+            if verbose:
+                print(f"\n  [子片段 {frag_idx+1}/{len(fragments)}]")
+                print(f"    时间范围: {frag.get('start')} -> {frag.get('end')} ({frag_start:.2f}s - {frag_end:.2f}s)")
+                print(f"    速度: {frag_speed}x")
+            
             # 边界检查
             if frag_start >= source_video_duration:
+                if verbose:
+                    print(f"    ⚠ 起始时间超出范围，调整为 {max(0, source_video_duration - 2):.2f}s")
                 frag_start = max(0, source_video_duration - 2)
             if frag_end > source_video_duration:
+                if verbose:
+                    print(f"    ⚠ 结束时间超出范围，调整为 {source_video_duration:.2f}s")
                 frag_end = source_video_duration
             
             frag_dur = frag_end - frag_start
@@ -156,6 +179,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             # 计算变速后的时长
             actual_frag_dur = frag_dur / frag_speed
             total_video_dur += actual_frag_dur
+            
+            if verbose:
+                print(f"    原始时长: {frag_dur:.2f}s, 变速后: {actual_frag_dur:.2f}s")
             
             # 切割单个片段
             frag_file = os.path.join(TEMP_DIR, f"frag_{idx}_{frag_idx}.mp4")
@@ -193,23 +219,33 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                 frag_file
             ])
             
+            if verbose:
+                print(f"    ⏳ 正在切割...")
+            
             try:
                 run_ffmpeg(cmd_frag, verbose=verbose)
                 frag_files.append(frag_file)
+                if verbose:
+                    cut_dur = get_duration(frag_file)
+                    print(f"    ✓ 切割完成 -> {os.path.basename(frag_file)} ({cut_dur:.2f}s)")
             except Exception as e:
                 if verbose:
-                    print(f"[警告] 片段 {idx+1} 子片段 {frag_idx+1} 切割失败: {e}")
+                    print(f"    ✗ 切割失败: {e}")
         
         if not frag_files:
             if verbose:
-                print(f"[跳过] 片段 {idx+1}: 无有效子片段")
+                print(f"\n[跳过] 场景 {idx+1}: 无有效子片段")
             continue
         
         # 如果只有一个片段，直接使用；否则拼接
         if len(frag_files) == 1:
             import shutil
             shutil.copy(frag_files[0], p_seg_v)
+            if verbose:
+                print(f"\n  [视频合成] 单片段，直接使用")
         else:
+            if verbose:
+                print(f"\n  [视频合成] 拼接 {len(frag_files)} 个子片段...")
             # 使用 concat demuxer 拼接多个片段
             concat_list = os.path.join(TEMP_DIR, f"concat_{idx}.txt")
             with open(concat_list, 'w', encoding='utf-8') as f:
@@ -223,22 +259,35 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                 p_seg_v
             ]
             run_ffmpeg(cmd_concat, verbose=verbose)
+            if verbose:
+                print(f"  ✓ 拼接完成")
         
         # 获取拼接后的实际视频时长
         actual_video_dur = get_duration(p_seg_v)
         video_dur = actual_video_dur
+        
+        if verbose:
+            print(f"\n  [音频处理]")
+            print(f"    音频文件: {os.path.basename(audio_path) if audio_path else 'N/A'}")
         
         # A. 处理音频 (计算是否需要延长视频)
         # 先转为wav并获取时长
         run_ffmpeg(["ffmpeg", "-y", "-i", audio_path, p_seg_a], verbose=verbose)
         audio_dur = get_duration(p_seg_a)
         
+        if verbose:
+            print(f"    视频时长: {video_dur:.2f}s")
+            print(f"    音频时长: {audio_dur:.2f}s")
+            if audio_dur > video_dur:
+                print(f"    ⚠ 音频比视频长 {audio_dur - video_dur:.2f}s，需要延长视频")
+            elif video_dur > audio_dur:
+                print(f"    ℹ 视频比音频长 {video_dur - audio_dur:.2f}s，将用静音填充")
+        
         final_audio_filter = "anull" # 默认不处理
         
         # 如果音频比视频长，自动延长最后一个片段
         if audio_dur > video_dur + 0.1:
             diff = audio_dur - video_dur
-            vo_text = scene.get('voiceover', '').strip()
             vo_snippet = (vo_text[:30] + '..') if len(vo_text) > 30 else vo_text
             
             # 获取最后一个片段的结束时间，从那里继续延长

@@ -56,7 +56,7 @@ def run_ffmpeg(cmd, verbose=False, cwd=None):
         raise subprocess.CalledProcessError(result.returncode, cmd)
     return result
 
-def process_render(video_path, script_data, audio_files, verbose=False, resolution="native", gpu=False, gpu_surfaces=64, gpu_lookahead=32):
+def process_render(video_path, script_data, audio_files, verbose=False, resolution="native", gpu=False, gpu_surfaces=16, gpu_lookahead=8):
     """
     核心渲染逻辑:
     1. 遍历脚本，切割视频，处理音频同步
@@ -68,12 +68,12 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
         verbose: If True, print progress to terminal (CLI mode)
         resolution: 'native' 保持原分辨率, '360p' 缩放到640x360
         gpu: If True, use NVIDIA GPU (h264_nvenc) for encoding
-        gpu_surfaces: GPU编码缓冲区数量 (8-64, 默认64, 越高越吃显存越快)
-        gpu_lookahead: 前瞻帧数 (0-32, 默认32, 越高越吃显存质量越好)
+        gpu_surfaces: GPU编码缓冲区数量 (8-64, 默认16)
+        gpu_lookahead: 前瞻帧数 (0-32, 默认8)
     """
     # 根据 gpu 参数选择编码器
     if gpu:
-        # 最大化 GPU 性能：榨干显存
+        # GPU 编码参数 (兼容性优先)
         video_codec = [
             "h264_nvenc", 
             "-preset", "p1",                    # p1 最快预设
@@ -81,17 +81,13 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             "-rc", "vbr",                       # 可变比特率
             "-cq", "23",                        # 质量参数
             "-b:v", "0",                        # 不限制比特率
-            "-spatial-aq", "1",                 # 空间自适应量化
-            "-temporal-aq", "1",                # 时间自适应量化
-            "-surfaces", str(gpu_surfaces),     # 编码缓冲区 (榨干显存)
-            "-rc-lookahead", str(gpu_lookahead),# 前瞻帧数 (榨干显存)
-            "-bf", "4",                         # B帧数量
-            "-b_ref_mode", "middle",            # B帧参考模式
+            "-surfaces", str(gpu_surfaces),     # 编码缓冲区
+            "-rc-lookahead", str(gpu_lookahead),# 前瞻帧数
         ]
-        # 硬件解码加速参数（用于输入）
-        hw_decode = ["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"]
+        # 只用 hwaccel cuda 做硬件解码，不指定 output_format 让 FFmpeg 自动处理格式转换
+        hw_decode = ["-hwaccel", "cuda"]
         if verbose:
-            print(f"[GPU] NVENC 极速模式: surfaces={gpu_surfaces}, lookahead={gpu_lookahead}")
+            print(f"[GPU] NVENC 模式: surfaces={gpu_surfaces}, lookahead={gpu_lookahead}")
     else:
         video_codec = ["libx264", "-preset", "fast", "-crf", "23"]
         hw_decode = []

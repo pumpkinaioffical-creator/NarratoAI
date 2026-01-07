@@ -43,18 +43,58 @@ def get_duration(file_path):
     except:
         return 0.0
 
-def run_ffmpeg(cmd, verbose=False, cwd=None):
-    """Run FFmpeg command with optional stderr output for debugging"""
-    # Force utf-8 and relax decoding to prevent crash on Windows (GBK vs UTF-8 issues)
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, encoding='utf-8', errors='replace')
-    if result.returncode != 0:
-        if verbose:
-            print(f"[FFmpeg 错误] 命令: {' '.join(cmd[:5])}...")
-            # Print last 800 chars of stderr
-            stderr_tail = result.stderr[-800:] if len(result.stderr) > 800 else result.stderr
-            print(stderr_tail)
-        raise subprocess.CalledProcessError(result.returncode, cmd)
-    return result
+def run_ffmpeg(cmd, verbose=False, cwd=None, realtime=True):
+    """Run FFmpeg command with real-time progress display"""
+    import sys
+    
+    if verbose and realtime:
+        # 实时显示 FFmpeg 输出
+        process = subprocess.Popen(
+            cmd, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE, 
+            cwd=cwd,
+            text=True,
+            encoding='utf-8',
+            errors='replace',
+            bufsize=1
+        )
+        
+        # 读取 stderr（FFmpeg 进度信息在 stderr）
+        last_line = ""
+        while True:
+            line = process.stderr.readline()
+            if not line and process.poll() is not None:
+                break
+            if line:
+                line = line.strip()
+                # 只显示进度行（包含 frame= 或 size=）
+                if 'frame=' in line or 'size=' in line or 'time=' in line:
+                    # 覆盖显示进度
+                    sys.stdout.write(f"\r  📊 {line[:100]}")
+                    sys.stdout.flush()
+                    last_line = line
+                elif 'error' in line.lower() or 'warning' in line.lower():
+                    print(f"\n  ⚠️ {line}")
+        
+        if last_line:
+            print()  # 换行
+        
+        returncode = process.wait()
+        if returncode != 0:
+            print(f"  ❌ FFmpeg 错误 (exit code {returncode})")
+            raise subprocess.CalledProcessError(returncode, cmd)
+        return process
+    else:
+        # 静默模式
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, encoding='utf-8', errors='replace')
+        if result.returncode != 0:
+            if verbose:
+                print(f"[FFmpeg 错误] 命令: {' '.join(cmd[:5])}...")
+                stderr_tail = result.stderr[-800:] if len(result.stderr) > 800 else result.stderr
+                print(stderr_tail)
+            raise subprocess.CalledProcessError(result.returncode, cmd)
+        return result
 
 def process_render(video_path, script_data, audio_files, verbose=False, resolution="native", gpu=False, gpu_surfaces=16, gpu_lookahead=8):
     """
@@ -114,6 +154,14 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
 
     # 1. 处理每个片段
     for idx, scene in enumerate(script_data):
+        # 详细进度显示
+        if verbose:
+            vo_preview = scene.get('voiceover', '')[:40]
+            print(f"\n{'='*60}")
+            print(f"🎬 片段 {idx+1}/{total_scenes} ({(idx+1)/total_scenes*100:.1f}%)")
+            print(f"📝 \"{vo_preview}...\"")
+            print(f"{'='*60}")
+        
         # 支持新格式 (fragments列表) 和旧格式 (time_start/time_end)
         fragments = scene.get('fragments', [])
         if not fragments:
@@ -211,6 +259,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             ])
             
             try:
+                if verbose:
+                    speed_info = f" @{frag_speed}x" if frag_speed != 1.0 else ""
+                    print(f"  🎞️  子片段 {frag_idx+1}/{len(fragments)}: {frag_start:.1f}s → {frag_end:.1f}s ({frag_dur:.1f}s{speed_info})")
                 run_ffmpeg(cmd_frag, verbose=verbose)
                 frag_files.append(frag_file)
             except Exception as e:
@@ -246,9 +297,13 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
         video_dur = actual_video_dur
         
         # A. 处理音频 (计算是否需要延长视频)
-        # 先转为wav并获取时长
+        if verbose:
+            print(f"  🔊 处理音频...")
         run_ffmpeg(["ffmpeg", "-y", "-i", audio_path, p_seg_a], verbose=verbose)
         audio_dur = get_duration(p_seg_a)
+        
+        if verbose:
+            print(f"  📐 视频时长: {video_dur:.2f}s, 音频时长: {audio_dur:.2f}s")
         
         final_audio_filter = "anull" # 默认不处理
         
@@ -364,6 +419,9 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
         run_ffmpeg(cmd_merge, verbose=verbose)
         segment_files.append(p_seg_out)
         
+        if verbose:
+            print(f"  ✅ 片段 {idx+1} 完成！")
+        
         # 更新视频时长用于字幕计时
         video_dur = get_duration(p_seg_out)
         
@@ -392,6 +450,12 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             f.write(f"file '{os.path.basename(seg)}'\n")
             
     merged_tmp = os.path.join(TEMP_DIR, "merged_tmp.mp4")
+    
+    if verbose:
+        print(f"\n{'='*60}")
+        print(f"🎬 最终合并: 拼接 {len(segment_files)} 个片段...")
+        print(f"{'='*60}")
+    
     # Use relative filename since we run with cwd=TEMP_DIR
     cmd_concat = [
         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
@@ -411,6 +475,13 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     # 4. 跳过字幕烧录，直接使用合并后的视频作为最终输出
     import shutil
     shutil.copy(merged_tmp, final_path)
+    
+    if verbose:
+        final_dur = get_duration(final_path)
+        print(f"\n🎉 渲染完成！")
+        print(f"📁 输出文件: {final_path}")
+        print(f"⏱️  总时长: {final_dur:.1f} 秒 ({final_dur/60:.1f} 分钟)")
+    
     update_progress("完成", "渲染完成！")
     
     # 5. 生成报告

@@ -8,6 +8,8 @@ INPUT_JSON = "1.json"
 INPUT_VIDEO = "1.mkv"
 RESOLUTION = "native"  # 默认原始分辨率
 USE_GPU = False  # 默认使用CPU
+GPU_SURFACES = 64  # GPU编码缓冲区
+GPU_LOOKAHEAD = 32  # 前瞻帧数
 
 async def generate_audio(text, output_file):
     communicate = edge_tts.Communicate(text, "zh-CN-YunxiNeural")
@@ -95,7 +97,9 @@ async def main():
             audio_files=audio_files,
             verbose=True,
             resolution=RESOLUTION,
-            gpu=USE_GPU
+            gpu=USE_GPU,
+            gpu_surfaces=GPU_SURFACES,
+            gpu_lookahead=GPU_LOOKAHEAD
         )
         print(f"Render Success! Output: {final_path}")
     except Exception as e:
@@ -115,6 +119,8 @@ if __name__ == "__main__":
     parser.add_argument("video_file", nargs="?", default="1.mkv", help="Input video source file")
     parser.add_argument("-r", "--resolution", default="native", help="Resolution: native, 360p, 480p, 720p, 1080p, or WxH")
     parser.add_argument("--gpu", action="store_true", help="Use NVIDIA GPU (NVENC) for encoding")
+    parser.add_argument("--surfaces", type=int, default=64, help="GPU编码缓冲区 (8-64, 越高越吃显存越快)")
+    parser.add_argument("--lookahead", type=int, default=32, help="前瞻帧数 (0-32, 越高越吃显存质量越好)")
     args = parser.parse_args()
 
     # Update globals or pass to main
@@ -122,6 +128,8 @@ if __name__ == "__main__":
     INPUT_VIDEO = args.video_file
     RESOLUTION = args.resolution
     USE_GPU = args.gpu
+    GPU_SURFACES = args.surfaces
+    GPU_LOOKAHEAD = args.lookahead
     
     # Check strict existence here or let main handle it
     if not os.path.exists(INPUT_JSON):

@@ -8,9 +8,7 @@ INPUT_JSON = "1.json"
 INPUT_VIDEO = "1.mkv"
 RESOLUTION = "native"  # 默认原始分辨率
 
-async def generate_audio(text, output_file):
-    communicate = edge_tts.Communicate(text, "zh-CN-YunxiNeural")
-    await communicate.save(output_file)
+
 
 async def main():
     if not os.path.exists(INPUT_JSON):
@@ -52,6 +50,34 @@ async def main():
             shutil.rmtree(temp_dir)
         os.makedirs(temp_dir)
 
+    
+    # 准备任务列表
+    tasks = []
+    
+    # 定义并发信号量
+    sem = asyncio.Semaphore(5) 
+
+    async def generate_audio_safe(task_idx, text, output_path):
+        async with sem:
+            # 预处理文本：插入停顿
+            # 使用 SSML
+            processed_text = text.replace("，", '<break time="400ms"/>').replace(",", '<break time="400ms"/>')
+            ssml_content = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='zh-CN'><voice name='zh-CN-YunxiNeural'>{processed_text}</voice></speak>"
+            
+            while True:
+                try:
+                    # 使用 edge_tts 生成
+                    communicate = edge_tts.Communicate(ssml_content, "zh-CN-YunxiNeural")
+                    await communicate.save(output_path)
+                    print(f"[音频生成] ✅ 第 {task_idx} 句完成: {text[:15]}...")
+                    return output_path
+                except Exception as e:
+                    print(f"[音频生成] ❌ 第 {task_idx} 句失败，2秒后无限重试... 错误: {e}")
+                    await asyncio.sleep(2)
+
+    # 第一遍遍历：收集所有任务
+    valid_scenes = []
+    
     for idx, item in enumerate(data):
         voice_text = item.get("voiceover", "")
         fragments = item.get("fragments", [])
@@ -59,28 +85,33 @@ async def main():
         if not fragments:
             print(f"Skipping item {idx}: No fragments.")
             continue
-        
-        # Generator Audio first, only add scene if audio is ready
-        # Use prefix based on JSON filename to avoid collision between 1.json and 2.json
+            
         json_prefix = os.path.basename(INPUT_JSON).split('.')[0]
         audio_filename = os.path.abspath(f"temp_audio/tts_{json_prefix}_{idx}.mp3")
-        if not os.path.exists(audio_filename):
-            try:
-                await generate_audio(voice_text, audio_filename)
-                print(f"Generated audio for scene {idx}")
-            except Exception as e:
-                print(f"Failed to generate audio for scene {idx}: {e}")
-                continue  # Skip this scene entirely
         
-        # Only add scene after audio is confirmed
-        scene = {
+        # 添加任务
+        task = generate_audio_safe(idx, voice_text, audio_filename)
+        tasks.append(task)
+        
+        # 记录场景数据以便后续组装
+        valid_scenes.append({
             "fragments": fragments,
-            "voiceover": voice_text
-        }
-        script_data.append(scene)
-        
-        # audio_files key must match script_data index
-        audio_files[str(len(script_data)-1)] = audio_filename
+            "voiceover": voice_text,
+            "audio_file": audio_filename
+        })
+
+    # 并发执行所有音频任务
+    print(f"开始批量生成 {len(tasks)} 个音频片段...")
+    await asyncio.gather(*tasks)
+    print("所有音频生成完毕！")
+
+    # 构建最终的 script_data 和 audio_files
+    for idx, scene in enumerate(valid_scenes):
+        script_data.append({
+            "fragments": scene["fragments"],
+            "voiceover": scene["voiceover"]
+        })
+        audio_files[str(idx)] = scene["audio_file"]
 
     print(f"Prepared {len(script_data)} scenes.")
     

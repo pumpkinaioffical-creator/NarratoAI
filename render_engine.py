@@ -77,20 +77,33 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     total_scenes = len(script_data)
     
     # Progress callback
-    def update_progress(step, detail=""):
+    def update_progress(percent, step, detail=""):
         if verbose:
-            print(f"[进度] {step}: {detail}")
-        # Also write to file for GUI mode
+            # 简单的进度条显示
+            bar_len = 40
+            filled = int(bar_len * percent / 100)
+            bar = '█' * filled + '░' * (bar_len - filled)
+            # 使用回车符 \r 刷新当前行，实现实时进度跳动
+            # 如果是 CLI，可能会被 FFmpeg 的输出冲掉，所以如果 verbose 开启 FFmpeg 日志，
+            # 这里最好换行打印。但用户要求详细日志，我们假设是混合输出。
+            # 为了清晰，我们在新行打印重要步骤
+            print(f"\n[进度 {percent}%] {step}: {detail}")
+            
         with open(os.path.join(TEMP_DIR, "progress.txt"), "w", encoding="utf-8") as f:
-            f.write(f"{step}|{detail}")
+            f.write(f"{percent}|{step}|{detail}")
 
     segment_files = []
     srt_entries = []
     current_time_cursor = 0.0
     report_log = []
 
+    print("\n======== 开始渲染流程 ========")
     # 1. 处理每个片段
     for idx, scene in enumerate(script_data):
+        percent = int(((idx) / total_scenes) * 90)
+        curr_text = scene.get('voiceover', '')[:10] + '...'
+        update_progress(percent, f"处理场景 {idx+1}/{total_scenes}", f"正在处理: {curr_text}")
+        
         # 支持新格式 (fragments列表) 和旧格式 (time_start/time_end)
         fragments = scene.get('fragments', [])
         if not fragments:
@@ -380,7 +393,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
         "merged_tmp.mp4"  # relative to TEMP_DIR
     ]
     # 注意：cwd设为TEMP_DIR以便读取 filelist
-    update_progress("合并片段", "正在拼接所有片段...")
+    update_progress(95, "合并片段", "正在拼接所有片段...")
     run_ffmpeg(cmd_concat, verbose=verbose, cwd=TEMP_DIR)
     
     # 3. 生成 SRT 文件 (保存备用，但不烧录)
@@ -391,7 +404,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     # 4. 跳过字幕烧录，直接使用合并后的视频作为最终输出
     import shutil
     shutil.copy(merged_tmp, final_path)
-    update_progress("完成", "渲染完成！")
+    update_progress(100, "完成", "渲染完成！")
     
     # 5. 生成报告
     if report_log:

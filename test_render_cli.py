@@ -7,35 +7,10 @@ from render_engine import process_render
 INPUT_JSON = "1.json"
 INPUT_VIDEO = "1.mkv"
 RESOLUTION = "native"  # 默认原始分辨率
-USE_GPU = False  # 默认使用CPU
-GPU_SURFACES = 16  # GPU编码缓冲区 (Colab兼容)
-GPU_LOOKAHEAD = 8  # 前瞻帧数 (Colab兼容)
 
-def add_comma_breaks(text):
-    """在逗号处添加停顿（SSML风格，edge-tts会识别）"""
-    # 中文逗号和英文逗号都加停顿
-    return text.replace("，", "，ー").replace(",", ", ")
-
-async def generate_audio_with_retry(text, output_file, max_retries=None):
-    """生成音频，失败无限重试"""
-    # 添加逗号断句处理
-    processed_text = add_comma_breaks(text)
-    attempt = 0
-    while True:
-        attempt += 1
-        try:
-            communicate = edge_tts.Communicate(processed_text, "zh-CN-YunxiNeural")
-            await communicate.save(output_file)
-            return True
-        except Exception as e:
-            print(f"[重试 {attempt}] 音频生成失败: {e}")
-            await asyncio.sleep(1)  # 等1秒后重试
-            if max_retries and attempt >= max_retries:
-                return False
-
-async def generate_all_audio_parallel(tasks):
-    """并行生成所有音频"""
-    return await asyncio.gather(*tasks, return_exceptions=True)
+async def generate_audio(text, output_file):
+    communicate = edge_tts.Communicate(text, "zh-CN-YunxiNeural")
+    await communicate.save(output_file)
 
 async def main():
     if not os.path.exists(INPUT_JSON):
@@ -45,11 +20,12 @@ async def main():
         print(f"Error: {INPUT_VIDEO} not found.")
         return
 
-    # 1. Read JSON
+    # 1. Read 1.json
     with open(INPUT_JSON, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    # 2. Recursively flatten data if nested
+    # 2. Adapt to app.py schema
+    # Recursively flatten data if nested (user may have deeply nested arrays)
     def flatten(items):
         result = []
         for item in items:
@@ -60,47 +36,51 @@ async def main():
         return result
     
     data = flatten(data)
+
+    # app.py expects: { 'time_start': 'MM:SS', 'time_end': 'MM:SS', 'voiceover': '...' }
+    # 1.json has: { 'voiceover': '...', 'fragments': [ { 'start': 'MM:SS', 'end': 'MM:SS' } ] }
     
-    # Clear and recreate temp directories
+    script_data = []
+    audio_files = {}
+
+    print("Generating audio and preparing script data...")
+    
+    # Clear and recreate temp directories (no caching)
     import shutil
     for temp_dir in ["temp_audio", "temp_render"]:
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
         os.makedirs(temp_dir)
 
-    # 3. 准备所有音频生成任务
-    json_prefix = os.path.basename(INPUT_JSON).split('.')[0]
-    audio_tasks = []
-    task_info = []  # 记录每个任务对应的idx和文件名
-    
     for idx, item in enumerate(data):
         voice_text = item.get("voiceover", "")
         fragments = item.get("fragments", [])
         
-        if not fragments or not voice_text:
+        if not fragments:
+            print(f"Skipping item {idx}: No fragments.")
             continue
         
+        # Generator Audio first, only add scene if audio is ready
+        # Use prefix based on JSON filename to avoid collision between 1.json and 2.json
+        json_prefix = os.path.basename(INPUT_JSON).split('.')[0]
         audio_filename = os.path.abspath(f"temp_audio/tts_{json_prefix}_{idx}.mp3")
-        audio_tasks.append(generate_audio_with_retry(voice_text, audio_filename))
-        task_info.append((idx, audio_filename, fragments, voice_text))
-    
-    # 4. 并行生成所有音频
-    print(f"[TTS] 并行生成 {len(audio_tasks)} 个音频...")
-    await generate_all_audio_parallel(audio_tasks)
-    print(f"[TTS] 音频生成完成！")
-    
-    # 5. 构建 script_data 和 audio_files
-    script_data = []
-    audio_files = {}
-    
-    for idx, audio_filename, fragments, voice_text in task_info:
-        if os.path.exists(audio_filename):
-            scene = {
-                "fragments": fragments,
-                "voiceover": voice_text
-            }
-            script_data.append(scene)
-            audio_files[str(len(script_data)-1)] = audio_filename
+        if not os.path.exists(audio_filename):
+            try:
+                await generate_audio(voice_text, audio_filename)
+                print(f"Generated audio for scene {idx}")
+            except Exception as e:
+                print(f"Failed to generate audio for scene {idx}: {e}")
+                continue  # Skip this scene entirely
+        
+        # Only add scene after audio is confirmed
+        scene = {
+            "fragments": fragments,
+            "voiceover": voice_text
+        }
+        script_data.append(scene)
+        
+        # audio_files key must match script_data index
+        audio_files[str(len(script_data)-1)] = audio_filename
 
     print(f"Prepared {len(script_data)} scenes.")
     
@@ -113,10 +93,7 @@ async def main():
             script_data=script_data,
             audio_files=audio_files,
             verbose=True,
-            resolution=RESOLUTION,
-            gpu=USE_GPU,
-            gpu_surfaces=GPU_SURFACES,
-            gpu_lookahead=GPU_LOOKAHEAD
+            resolution=RESOLUTION
         )
         print(f"Render Success! Output: {final_path}")
     except Exception as e:
@@ -135,18 +112,12 @@ if __name__ == "__main__":
     parser.add_argument("json_file", nargs="?", default="1.json", help="Input JSON script file")
     parser.add_argument("video_file", nargs="?", default="1.mkv", help="Input video source file")
     parser.add_argument("-r", "--resolution", default="native", help="Resolution: native, 360p, 480p, 720p, 1080p, or WxH")
-    parser.add_argument("--gpu", action="store_true", help="Use NVIDIA GPU (NVENC) for encoding")
-    parser.add_argument("--surfaces", type=int, default=16, help="GPU编码缓冲区 (8-64, 默认16)")
-    parser.add_argument("--lookahead", type=int, default=8, help="前瞻帧数 (0-32, 默认8)")
     args = parser.parse_args()
 
     # Update globals or pass to main
     INPUT_JSON = args.json_file
     INPUT_VIDEO = args.video_file
     RESOLUTION = args.resolution
-    USE_GPU = args.gpu
-    GPU_SURFACES = args.surfaces
-    GPU_LOOKAHEAD = args.lookahead
     
     # Check strict existence here or let main handle it
     if not os.path.exists(INPUT_JSON):
@@ -165,6 +136,5 @@ if __name__ == "__main__":
     print(f"Using Script: {INPUT_JSON}")
     print(f"Using Video:  {INPUT_VIDEO}")
     print(f"Resolution:   {RESOLUTION}")
-    print(f"GPU Accel:    {'NVIDIA NVENC' if USE_GPU else 'CPU (libx264)'}")
 
     asyncio.run(main())

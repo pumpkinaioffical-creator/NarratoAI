@@ -11,20 +11,13 @@ USE_GPU = False  # 默认使用CPU
 
 async def generate_audio(text, output_file, max_retries=float('inf')):
     """
-    使用 edge_tts 生成音频，支持逗号断句和无限重试
+    使用 edge_tts 生成音频，支持无限重试
     """
-    # 在逗号后添加短暂停顿，让语音更自然
-    # 使用 SSML 的 break 标签
-    text_with_breaks = text.replace('，', '，<break time="300ms"/>')
-    text_with_breaks = text_with_breaks.replace(',', ',<break time="200ms"/>')
-    text_with_breaks = text_with_breaks.replace('。', '。<break time="400ms"/>')
-    text_with_breaks = text_with_breaks.replace('！', '！<break time="350ms"/>')
-    text_with_breaks = text_with_breaks.replace('？', '？<break time="350ms"/>')
-    
     retry_count = 0
     while True:
         try:
-            communicate = edge_tts.Communicate(text_with_breaks, "zh-CN-YunxiNeural")
+            # edge_tts 会自动根据标点符号进行断句，不需要额外SSML
+            communicate = edge_tts.Communicate(text, "zh-CN-YunxiNeural")
             await communicate.save(output_file)
             return True
         except Exception as e:

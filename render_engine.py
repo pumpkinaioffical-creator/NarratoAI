@@ -234,7 +234,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
             cmd_concat = [
                 "ffmpeg", "-y", "-f", "concat", "-safe", "0",
                 "-i", concat_list,
-            ] + ["-c:v"] + video_codec + ["-an",
+                "-c:v", "copy", "-an",
                 p_seg_v
             ]
             run_ffmpeg(cmd_concat, verbose=verbose)
@@ -320,7 +320,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                     cmd_concat_ext = [
                         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
                         "-i", concat_extend,
-                    ] + ["-c:v"] + video_codec + ["-an",
+                        "-c:v", "copy", "-an",
                         p_seg_v_extended
                     ]
                     run_ffmpeg(cmd_concat_ext, verbose=verbose)
@@ -394,7 +394,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     cmd_concat = [
         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
         "-i", "filelist.txt",
-        "-c:v"] + video_codec + ["-c:a", "aac", "-b:a", "128k",
+        "-c:v", "copy", "-c:a", "copy",
         "merged_tmp.mp4"
     ]
     # 注意：cwd设为TEMP_DIR以便读取 filelist

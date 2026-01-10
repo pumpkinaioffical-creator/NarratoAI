@@ -56,7 +56,7 @@ def run_ffmpeg(cmd, verbose=False, cwd=None):
         raise subprocess.CalledProcessError(result.returncode, cmd)
     return result
 
-def process_render(video_path, script_data, audio_files, verbose=False, resolution="native"):
+def process_render(video_path, script_data, audio_files, verbose=False, resolution="native", cut_method="pad"):
     """
     核心渲染逻辑:
     1. 遍历脚本，切割视频，处理音频同步
@@ -168,22 +168,40 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                     # 支持自定义 WxH 格式，如 "800x600"
                     scale_filter = f"scale={resolution.replace('x', ':')},"
             
+            # 构建视频滤镜
+            vf_filters = []
+            if scale_filter:
+                vf_filters.append(scale_filter.rstrip(','))
+            
             if frag_speed != 1.0:
-                # setpts调整视频速度，例如 setpts=0.5*PTS 加速2倍
-                speed_filter = f"setpts={1/frag_speed}*PTS"
-                vf = f"{scale_filter}{speed_filter}"
-            else:
-                vf = scale_filter.rstrip(',') if scale_filter else None
+                vf_filters.append(f"setpts={1/frag_speed}*PTS")
+            
+            vf_chain = ",".join(vf_filters) if vf_filters else None
+            
+            # 构建音频滤镜 (保留原声并变速)
+            # 需要在函数顶层定义 get_atempo_filter，这里先假设已定义或临时内联
+            af_chain = None
+            if frag_speed != 1.0:
+                # 临时的内联实现以免此时未定义报错，也可以稍后在顶部添加
+                filters = []
+                s = frag_speed
+                while s < 0.5: filters.append("atempo=0.5"); s /= 0.5
+                while s > 2.0: filters.append("atempo=2.0"); s /= 2.0
+                filters.append(f"atempo={s}")
+                af_chain = ",".join(filters)
             
             cmd_frag = [
                 "ffmpeg", "-y", "-ss", str(frag_start), "-t", str(frag_dur),
                 "-i", video_path
             ]
-            if vf:
-                cmd_frag.extend(["-vf", vf])
+            if vf_chain:
+                cmd_frag.extend(["-vf", vf_chain])
+            if af_chain:
+                cmd_frag.extend(["-af", af_chain])
+            
             cmd_frag.extend([
                 "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                "-an",
+                "-c:a", "aac", 
                 frag_file
             ])
             
@@ -330,18 +348,74 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
         
         # 此时 final_audio_filter 应该是空的或者 anull
         
-        cmd_merge = [
-            "ffmpeg", "-y",
-            "-i", p_seg_v,
-            "-i", p_seg_a,
-            "-filter_complex", f"[1:a]apad=whole_dur={video_dur}[aout]",
-            "-map", "0:v", "-map", "[aout]",
-            "-c:v", "copy", "-c:a", "aac",
-            "-t", str(video_dur),
-            p_seg_out
-        ]
-        run_ffmpeg(cmd_merge, verbose=verbose)
-        segment_files.append(p_seg_out)
+        cmd_merge = []
+        video_dur = get_duration(p_seg_v)
+        
+        # 截断模式：如果设置了 --cut 且视频比音频长，则截断视频
+        if cut_method == "cut" and video_dur > audio_dur + 0.1:
+            cmd_merge = [
+                "ffmpeg", "-y",
+                "-i", p_seg_v,
+                "-i", p_seg_a,
+                "-map", "0:v", "-map", "1:a",
+                "-c:v", "copy", "-c:a", "aac",
+                "-shortest", # 截断到最短流(音频)
+                p_seg_out
+            ]
+        # 填充模式(默认)：如果视频比音频长，让视频按原样播放，音频部分：
+        # 0~audio_dur: 使用TTS音频 (原声静音)
+        # audio_dur~end: 使用原声
+        elif video_dur > audio_dur + 0.1:
+            # 这里的逻辑假设 p_seg_v 包含原声。如果 p_seg_v 没声音(例如源视频没音轨)，这会失败。
+            # 为防万一，可以先检查流，但这里先假设有。
+            # Log: [0:a]volume=0:enable='between(t,0,AUDIO_DUR)'[bg];[1:a][bg]amix=inputs=2:duration=longest[aout]
+            
+            # 注意: enable filter 需要重新编码音频
+            audio_filter = f"[0:a]volume=0:enable='between(t,0,{audio_dur})'[bg];[1:a][bg]amix=inputs=2:duration=longest:dropout_transition=0[aout]"
+            
+            cmd_merge = [
+                "ffmpeg", "-y",
+                "-i", p_seg_v,
+                "-i", p_seg_a,
+                "-filter_complex", audio_filter,
+                "-map", "0:v", "-map", "[aout]",
+                "-c:v", "copy", "-c:a", "aac", 
+                "-t", str(video_dur),
+                p_seg_out
+            ]
+        # 音频更长或相等
+        else:
+            # 这种情况下，视频被拉长或循环，原声可能不连贯，或者我们应该只用 TTS。
+            # 简单起见，只用 TTS。
+            cmd_merge = [
+                "ffmpeg", "-y",
+                "-i", p_seg_v,
+                "-i", p_seg_a,
+                "-map", "0:v", "-map", "1:a",
+                "-c:v", "copy", "-c:a", "aac",
+                "-shortest", 
+                p_seg_out
+            ]
+            
+        try:
+             run_ffmpeg(cmd_merge, verbose=verbose)
+             segment_files.append(p_seg_out)
+        except Exception as e:
+             # Fallback if audio processing fails (e.g. no audio stream in source)
+             if verbose: print(f"[警告] 音频混合失败，尝试仅使用TTS音频: {e}")
+             # try simple merge without original audio
+             fallback_cmd = [
+                "ffmpeg", "-y",
+                "-i", p_seg_v,
+                "-i", p_seg_a,
+                "-filter_complex", f"[1:a]apad=whole_dur={video_dur}[aout]",
+                "-map", "0:v", "-map", "[aout]",
+                "-c:v", "copy", "-c:a", "aac",
+                "-t", str(video_dur),
+                p_seg_out
+             ]
+             run_ffmpeg(fallback_cmd, verbose=verbose)
+             segment_files.append(p_seg_out)
         
         # 更新视频时长用于字幕计时
         video_dur = get_duration(p_seg_out)
@@ -391,6 +465,14 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
     # 4. 跳过字幕烧录，直接使用合并后的视频作为最终输出
     import shutil
     shutil.copy(merged_tmp, final_path)
+    
+    # 导出 SRT
+    final_srt_path = os.path.splitext(final_path)[0] + ".srt"
+    shutil.copy(srt_path, final_srt_path)
+    if verbose:
+        print(f"[导出] 视频: {final_path}")
+        print(f"[导出] 字幕: {final_srt_path}")
+        
     update_progress("完成", "渲染完成！")
     
     # 5. 生成报告

@@ -6,7 +6,8 @@ from render_engine import process_render
 
 INPUT_JSON = "1.json"
 INPUT_VIDEO = "1.mkv"
-RESOLUTION = "native"  # 默认原始分辨率
+RESOLUTION = "native"
+CUT_METHOD = "pad"
 
 async def generate_audio(text, output_file):
     communicate = edge_tts.Communicate(text, "zh-CN-YunxiNeural")
@@ -20,12 +21,12 @@ async def main():
         print(f"Error: {INPUT_VIDEO} not found.")
         return
 
-    # 1. Read 1.json
+    # 1. Read input json
     with open(INPUT_JSON, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    # 2. Adapt to app.py schema
-    # Recursively flatten data if nested (user may have deeply nested arrays)
+    # 2. Adapt to schema
+    # Recursively flatten data if nested
     def flatten(items):
         result = []
         for item in items:
@@ -36,16 +37,13 @@ async def main():
         return result
     
     data = flatten(data)
-
-    # app.py expects: { 'time_start': 'MM:SS', 'time_end': 'MM:SS', 'voiceover': '...' }
-    # 1.json has: { 'voiceover': '...', 'fragments': [ { 'start': 'MM:SS', 'end': 'MM:SS' } ] }
     
     script_data = []
     audio_files = {}
 
     print("Generating audio and preparing script data...")
     
-    # Clear and recreate temp directories (no caching)
+    # Clear and recreate temp directories
     import shutil
     for temp_dir in ["temp_audio", "temp_render"]:
         if os.path.exists(temp_dir):
@@ -60,8 +58,6 @@ async def main():
             print(f"Skipping item {idx}: No fragments.")
             continue
         
-        # Generator Audio first, only add scene if audio is ready
-        # Use prefix based on JSON filename to avoid collision between 1.json and 2.json
         json_prefix = os.path.basename(INPUT_JSON).split('.')[0]
         audio_filename = os.path.abspath(f"temp_audio/tts_{json_prefix}_{idx}.mp3")
         if not os.path.exists(audio_filename):
@@ -70,22 +66,18 @@ async def main():
                 print(f"Generated audio for scene {idx}")
             except Exception as e:
                 print(f"Failed to generate audio for scene {idx}: {e}")
-                continue  # Skip this scene entirely
+                continue
         
-        # Only add scene after audio is confirmed
         scene = {
             "fragments": fragments,
             "voiceover": voice_text
         }
         script_data.append(scene)
-        
-        # audio_files key must match script_data index
         audio_files[str(len(script_data)-1)] = audio_filename
 
     print(f"Prepared {len(script_data)} scenes.")
     
     # 3. Call process_render
-    # Def: process_render(video_path, script_data, audio_files, verbose=False, resolution="native")
     print("Starting Rendering Process...")
     try:
         final_path = process_render(
@@ -93,7 +85,8 @@ async def main():
             script_data=script_data,
             audio_files=audio_files,
             verbose=True,
-            resolution=RESOLUTION
+            resolution=RESOLUTION,
+            cut_method=CUT_METHOD
         )
         print(f"Render Success! Output: {final_path}")
     except Exception as e:
@@ -101,40 +94,31 @@ async def main():
         import traceback
         traceback.print_exc()
 
-    # ... (code inside main) is largely fine, but need to update initial variables
-    
-    # 3. Call process_render
-    # ...
-
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Test Video Rendering")
     parser.add_argument("json_file", nargs="?", default="1.json", help="Input JSON script file")
     parser.add_argument("video_file", nargs="?", default="1.mkv", help="Input video source file")
     parser.add_argument("-r", "--resolution", default="native", help="Resolution: native, 360p, 480p, 720p, 1080p, or WxH")
+    parser.add_argument("--cut", action="store_true", help="If set, cut video to match audio length (instead of padding audio)")
+    
     args = parser.parse_args()
 
-    # Update globals or pass to main
     INPUT_JSON = args.json_file
     INPUT_VIDEO = args.video_file
     RESOLUTION = args.resolution
+    CUT_METHOD = "cut" if args.cut else "pad"
     
-    # Check strict existence here or let main handle it
     if not os.path.exists(INPUT_JSON):
         print(f"Error: JSON file '{INPUT_JSON}' not found.")
         exit(1)
     if not os.path.exists(INPUT_VIDEO):
         print(f"Error: Video file '{INPUT_VIDEO}' not found.")
         exit(1)
-
-    # Need to pass these to main or update global scope if main uses globals. 
-    # The current main uses global INPUT_JSON/INPUT_VIDEO. 
-    # Let's refactor main to accept args or just rely on the global scope update (module level).
-    # Since INPUT_JSON is global in the script, updating it *before* calling main() works if main uses input_json or refer to global.
-    # Looking at original code: INPUT_JSON is defined at module level. main() uses it.
     
     print(f"Using Script: {INPUT_JSON}")
     print(f"Using Video:  {INPUT_VIDEO}")
     print(f"Resolution:   {RESOLUTION}")
+    print(f"Cut Method:   {CUT_METHOD}")
 
     asyncio.run(main())

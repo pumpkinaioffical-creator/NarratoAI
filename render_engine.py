@@ -43,6 +43,19 @@ def get_duration(file_path):
     except:
         return 0.0
 
+def has_audio_stream(file_path):
+    """检查文件是否包含音频流"""
+    cmd = [
+        "ffprobe", "-v", "error", "-select_streams", "a",
+        "-show_entries", "stream=index", "-of", "csv=p=0", file_path
+    ]
+    try:
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # 如果有音频流，输出不为空
+        return bool(result.stdout.strip())
+    except:
+        return False
+
 def run_ffmpeg(cmd, verbose=False, cwd=None):
     """Run FFmpeg command with optional stderr output for debugging"""
     # Force utf-8 and relax decoding to prevent crash on Windows (GBK vs UTF-8 issues)
@@ -362,27 +375,37 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
                 "-shortest", # 截断到最短流(音频)
                 p_seg_out
             ]
-        # 填充模式(默认)：如果视频比音频长，让视频按原样播放，音频部分：
-        # 0~audio_dur: 使用TTS音频 (原声静音)
-        # audio_dur~end: 使用原声
         elif video_dur > audio_dur + 0.1:
-            # 这里的逻辑假设 p_seg_v 包含原声。如果 p_seg_v 没声音(例如源视频没音轨)，这会失败。
-            # 为防万一，可以先检查流，但这里先假设有。
-            # Log: [0:a]volume=0:enable='between(t,0,AUDIO_DUR)'[bg];[1:a][bg]amix=inputs=2:duration=longest[aout]
+            # 检查是否有原声
+            has_original_audio = has_audio_stream(p_seg_v)
             
-            # 注意: enable filter 需要重新编码音频
-            audio_filter = f"[0:a]volume=0:enable='between(t,0,{audio_dur})'[bg];[1:a][bg]amix=inputs=2:duration=longest:dropout_transition=0[aout]"
-            
-            cmd_merge = [
-                "ffmpeg", "-y",
-                "-i", p_seg_v,
-                "-i", p_seg_a,
-                "-filter_complex", audio_filter,
-                "-map", "0:v", "-map", "[aout]",
-                "-c:v", "copy", "-c:a", "aac", 
-                "-t", str(video_dur),
-                p_seg_out
-            ]
+            if has_original_audio:
+                # 有原声，进行混合
+                # Log: [0:a]volume=0:enable='between(t,0,AUDIO_DUR)'[bg];[1:a][bg]amix=inputs=2:duration=longest[aout]
+                audio_filter = f"[0:a]volume=0:enable='between(t,0,{audio_dur})'[bg];[1:a][bg]amix=inputs=2:duration=longest:dropout_transition=0[aout]"
+                cmd_merge = [
+                    "ffmpeg", "-y",
+                    "-i", p_seg_v,
+                    "-i", p_seg_a,
+                    "-filter_complex", audio_filter,
+                    "-map", "0:v", "-map", "[aout]",
+                    "-c:v", "copy", "-c:a", "aac", 
+                    "-t", str(video_dur),
+                    p_seg_out
+                ]
+            else:
+                # 无原声，直接填充静音，保留视频长度
+                # if verbose: print(f"[提示] 片段 {idx+1} 无原声，仅使用TTS")
+                cmd_merge = [
+                    "ffmpeg", "-y",
+                    "-i", p_seg_v,
+                    "-i", p_seg_a,
+                    "-filter_complex", f"[1:a]apad=whole_dur={video_dur}[aout]",
+                    "-map", "0:v", "-map", "[aout]",
+                    "-c:v", "copy", "-c:a", "aac",
+                    "-t", str(video_dur),
+                    p_seg_out
+                ]
         # 音频更长或相等
         else:
             # 这种情况下，视频被拉长或循环，原声可能不连贯，或者我们应该只用 TTS。

@@ -512,7 +512,7 @@ def process_render(video_path, script_data, audio_files, verbose=False, resoluti
 # API
 # ---------------------------------------------------
 
-HTML_CONTENT = """
+HTML_CONTENT = r"""
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
